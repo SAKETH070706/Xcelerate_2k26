@@ -1354,32 +1354,6 @@ export default function App() {
                                         {/* IF ACM MEMBER: CLEAR NOTICE & WHATSAPP NUMBER INPUT */}
                                         {membershipChoice === "yes" && (
                                             <div className="phase1-phone-container">
-                                                {/* PROMINENT ACM WHATSAPP GROUP NOTICE */}
-                                                <div
-                                                    className="acm-group-notice-banner"
-                                                    style={{
-                                                        background: "rgba(14, 165, 233, 0.12)",
-                                                        border: "1.5px solid rgba(56, 189, 248, 0.4)",
-                                                        borderRadius: "12px",
-                                                        padding: "14px 16px",
-                                                        marginBottom: "16px",
-                                                        display: "flex",
-                                                        alignItems: "flex-start",
-                                                        gap: "12px",
-                                                        boxShadow: "0 4px 14px rgba(2, 132, 199, 0.12)"
-                                                    }}
-                                                >
-                                                    <span style={{ fontSize: "22px", lineHeight: "1" }}>📲</span>
-                                                    <div>
-                                                        <div style={{ color: "#38bdf8", fontWeight: "800", fontSize: "14px", marginBottom: "4px", letterSpacing: "0.2px" }}>
-                                                            ACM WhatsApp Group Number Required
-                                                        </div>
-                                                        <div style={{ color: "#e2e8f0", fontSize: "13px", lineHeight: "1.5" }}>
-                                                            Please enter the <strong>exact phone number that is currently added in your official ACM WhatsApp Group</strong>. Your membership is verified automatically using this number.
-                                                        </div>
-                                                    </div>
-                                                </div>
-
                                                 <div className="field">
                                                     <label>
                                                         <svg className="field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
