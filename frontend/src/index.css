@@ -16,11 +16,16 @@ html {
 
 body {
     font-family:
-        Inter,
+        'Plus Jakarta Sans',
+        'Inter',
         -apple-system,
         BlinkMacSystemFont,
-        "Segoe UI",
+        'Segoe UI',
+        Roboto,
         sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
 
     background: #ffffff;
     background-image:
@@ -1039,20 +1044,18 @@ button {
 
 .registration-card {
     position: relative;
-    width: min(100%, 660px);
+    width: 100%;
+    max-width: 640px;
     margin: 0 auto;
-    padding: 42px 40px 38px;
-    background: rgba(255, 255, 255, 0.96);
-    backdrop-filter: blur(28px) saturate(190%);
-    -webkit-backdrop-filter: blur(28px) saturate(190%);
-    border: 1.5px solid rgba(37, 99, 235, 0.2);
-    border-radius: 28px;
+    padding: 38px 34px 34px;
+    background: #ffffff;
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    border-radius: 24px;
     box-shadow:
-        0 30px 75px rgba(2, 6, 23, 0.45),
-        0 0 40px rgba(56, 189, 248, 0.2),
-        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        0 10px 30px -5px rgba(15, 23, 42, 0.06),
+        0 20px 40px -15px rgba(37, 99, 235, 0.08);
     color: #0f172a;
-    overflow: hidden;
+    box-sizing: border-box;
 }
 
 .registration-card::before {
@@ -5209,7 +5212,7 @@ select option {
     }
 
     .hero-wrapper {
-        padding: 86px 16px 26px;
+        padding: 96px 16px 26px;
     }
 
     .hero-pill-badge {
@@ -5365,7 +5368,7 @@ select option {
     }
 
     .hero-wrapper {
-        padding: 76px 12px 22px;
+        padding: 94px 14px 22px;
     }
 
     .hero-pill-badge {
@@ -5896,7 +5899,7 @@ select option {
     }
 
     .hero-wrapper {
-        padding: 70px 8px 18px;
+        padding: 90px 10px 18px;
     }
 
     .hero-pill-badge {
@@ -6798,17 +6801,23 @@ select option {
     color: #94a3b8;
 }
 
+.upi-badge-row {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 12px;
+}
+
 .upi-qr-badge {
-    position: absolute;
-    bottom: -12px;
+    display: inline-flex;
+    align-items: center;
     background: linear-gradient(135deg, #1e3a8a, #2563eb);
     color: #ffffff;
-    font-size: 11px;
-    font-weight: 800;
+    font-size: 11.5px;
+    font-weight: 700;
     letter-spacing: 0.5px;
-    padding: 4px 14px;
+    padding: 5px 16px;
     border-radius: 9999px;
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
     text-transform: uppercase;
     white-space: nowrap;
 }
@@ -7064,19 +7073,49 @@ select option {
    MOBILE RESPONSIVENESS TWEAKS
 ========================================================= */
 @media (max-width: 640px) {
+    .site-header {
+        top: 8px !important;
+    }
     .hero-wrapper {
-        padding: 30px 16px 20px !important;
+        padding: 94px 16px 24px !important;
+    }
+    .hero-pill-badge {
+        font-size: 10.5px !important;
+        padding: 5px 12px !important;
+        letter-spacing: 0.6px !important;
+        margin-bottom: 14px !important;
     }
     .hero-main-title {
-        font-size: 32px !important;
+        font-size: 34px !important;
+        font-weight: 800 !important;
+        letter-spacing: -1px !important;
+        line-height: 1.15 !important;
+        margin-bottom: 10px !important;
+    }
+    .hero-tagline-motto {
+        font-size: 13px !important;
+        letter-spacing: 0.8px !important;
+        margin-bottom: 14px !important;
     }
     .hero-lead-text {
         font-size: 13.5px !important;
+        line-height: 1.55 !important;
+    }
+    .form-section {
+        padding: 0 16px 40px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        display: flex !important;
+        justify-content: center !important;
     }
     .registration-card {
-        padding: 22px 16px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 auto !important;
+        padding: 24px 16px !important;
         border-radius: 20px !important;
-        margin: 0 12px !important;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+        box-sizing: border-box !important;
     }
     .step-nav-row {
         flex-direction: column-reverse;
@@ -7089,16 +7128,33 @@ select option {
         margin-left: 0;
     }
     .stepper-nav {
-        margin-bottom: 24px;
+        margin-bottom: 22px;
+        padding: 0 6px !important;
+    }
+    .step-bubble {
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 12.5px !important;
+    }
+    .step-title {
+        font-size: 10px !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.2px !important;
+        margin-top: 6px !important;
     }
     .upi-qr-display-box {
-        max-width: 290px;
-        padding: 12px;
+        max-width: 310px;
+        width: 100%;
+        padding: 16px 14px 28px !important;
+        overflow: visible !important;
+        box-sizing: border-box;
     }
     .upi-qr-img {
-        max-width: 265px;
-        height: auto;
-        max-height: 380px;
+        width: 100%;
+        max-width: 280px;
+        height: auto !important;
+        max-height: none !important;
+        display: block;
     }
 }
 

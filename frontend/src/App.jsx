@@ -1777,6 +1777,10 @@ export default function App() {
                                                         Google Pay &bull; PhonePe &bull; Paytm &bull; BHIM
                                                     </p>
 
+                                                    <div className="upi-badge-row">
+                                                        <span className="upi-qr-badge">Pay ₹{formData.isAcmMember ? (paymentConfig.acmFee || 70) : (paymentConfig.nonAcmFee || 100)} via UPI</span>
+                                                    </div>
+
                                                     <div className="upi-qr-display-box">
                                                         {(formData.isAcmMember ? paymentConfig.qrAcmUrl : paymentConfig.qrNonAcmUrl) ? (
                                                              <img
@@ -1790,7 +1794,7 @@ export default function App() {
                                                         ) : (
                                                             <div className="upi-qr-placeholder">Generating UPI QR...</div>
                                                         )}
-                                                        <div className="upi-qr-badge">Pay ₹{formData.isAcmMember ? (paymentConfig.acmFee || 70) : (paymentConfig.nonAcmFee || 100)} via UPI</div>
+
                                                     </div>
 
                                                     <p className="upi-note">
