@@ -1749,36 +1749,23 @@ export default function App() {
                                             </p>
                                         </div>
 
-                                        {/* SUMMARY BADGE */}
-                                        <div className="checkout-summary-card">
-                                            <div className="summary-row">
-                                                <span className="summary-label">Attendee</span>
-                                                <span className="summary-val">{formData.name}</span>
+                                        {isOfflineDesk && (
+                                            <div style={{
+                                                background: "#eff6ff",
+                                                border: "1.5px solid #bfdbfe",
+                                                borderRadius: "14px",
+                                                padding: "14px 18px",
+                                                marginBottom: "20px",
+                                                textAlign: "center"
+                                            }}>
+                                                <div style={{ fontSize: "14px", fontWeight: "800", color: "#1e40af" }}>
+                                                    Offline Desk &bull; Cash Collection
+                                                </div>
+                                                <div style={{ fontSize: "13px", color: "#475569", marginTop: "4px" }}>
+                                                    Collecting for <strong>{formData.name}</strong> ({formData.registrationNumber}) &bull; ₹{formData.isAcmMember ? (paymentConfig.acmFee || 70) : (paymentConfig.nonAcmFee || 100)} Cash
+                                                </div>
                                             </div>
-                                            <div className="summary-row">
-                                                <span className="summary-label">Roll No &amp; Branch</span>
-                                                <span className="summary-val">{formData.registrationNumber} &bull; {formData.branch} (Sec {formData.section})</span>
-                                            </div>
-                                            <div className="summary-row">
-                                                <span className="summary-label">Category</span>
-                                                <span className="summary-val">
-                                                    {formData.isAcmMember ? "🌟 ACM Member (Verified)" : "🎓 Regular Participant"}
-                                                </span>
-                                            </div>
-                                            <div className="summary-row">
-                                                <span className="summary-label">Registration Fee</span>
-                                                <span className="summary-val" style={{ color: "#0f172a", fontWeight: "800", fontSize: "15px" }}>
-                                                    ₹{formData.isAcmMember ? (paymentConfig.acmFee || 70) : (paymentConfig.nonAcmFee || 100)}{" "}
-                                                    {formData.isAcmMember && <span style={{ color: "#16a34a", fontSize: "12px", fontWeight: "700" }}>(₹30 Discount Applied)</span>}
-                                                </span>
-                                            </div>
-                                            <div className="summary-row">
-                                                <span className="summary-label">Payment Mode</span>
-                                                <span className="summary-val" style={{ color: "#16a34a", fontWeight: "700" }}>
-                                                    {isOfflineDesk ? "Offline Desk (Cash Collected)" : "Online (UPI)"}
-                                                </span>
-                                            </div>
-                                        </div>
+                                        )}
 
                                         {/* ONLINE FLOW: QR CODE & PAYMENT UPLOADER */}
                                         {!isOfflineDesk && (
@@ -1789,34 +1776,6 @@ export default function App() {
                                                     <p className="payment-subtext">
                                                         Google Pay &bull; PhonePe &bull; Paytm &bull; BHIM
                                                     </p>
-
-                                                    {/* FEE AMOUNT HIGHLIGHT BANNER */}
-                                                    <div style={{
-                                                        background: formData.isAcmMember
-                                                            ? "linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(5, 150, 105, 0.12))"
-                                                            : "linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(29, 78, 216, 0.12))",
-                                                        border: `1.5px solid ${formData.isAcmMember ? "#86efac" : "#bfdbfe"}`,
-                                                        borderRadius: "14px",
-                                                        padding: "12px 16px",
-                                                        margin: "12px auto 16px",
-                                                        maxWidth: "340px",
-                                                        display: "flex",
-                                                        alignItems: "center",
-                                                        justifyContent: "space-between",
-                                                        gap: "10px"
-                                                    }}>
-                                                        <div style={{ textAlign: "left" }}>
-                                                            <div style={{ fontSize: "11px", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.5px", color: formData.isAcmMember ? "#15803d" : "#1d4ed8" }}>
-                                                                {formData.isAcmMember ? "🌟 ACM Member Fee" : "Standard Registration"}
-                                                            </div>
-                                                            <div style={{ fontSize: "12px", color: "#64748b" }}>
-                                                                {formData.isAcmMember ? "Special discount applied" : "2-day technical symposium"}
-                                                            </div>
-                                                        </div>
-                                                        <div style={{ fontSize: "22px", fontWeight: "900", color: formData.isAcmMember ? "#15803d" : "#1e40af" }}>
-                                                            ₹{formData.isAcmMember ? (paymentConfig.acmFee || 70) : (paymentConfig.nonAcmFee || 100)}
-                                                        </div>
-                                                    </div>
 
                                                     <div className="upi-qr-display-box">
                                                         {(formData.isAcmMember ? paymentConfig.qrAcmUrl : paymentConfig.qrNonAcmUrl) ? (
