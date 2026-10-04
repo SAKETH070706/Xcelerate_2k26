@@ -50,11 +50,32 @@ export default function App() {
     const [upiQrDataUrl, setUpiQrDataUrl] = useState("");
     const [passQrDataUrl, setPassQrDataUrl] = useState("");
 
-    // Scanned attendee pass verification state (/verify/:token)
-    const [scannedPassToken, setScannedPassToken] = useState(null);
+    // Scanned attendee pass verification state (/verify/:token or #verify/:token)
+    const [scannedPassToken, setScannedPassToken] = useState(() => {
+        if (typeof window !== "undefined") {
+            const path = window.location.pathname;
+            const hash = window.location.hash;
+            if (path.includes("/verify/")) {
+                const t = path.split("/verify/")[1]?.split("/")[0]?.split("?")[0];
+                return t ? t.trim() : null;
+            } else if (hash.includes("verify/")) {
+                const t = hash.split("verify/")[1]?.split("/")[0]?.split("?")[0];
+                return t ? t.trim() : null;
+            }
+        }
+        return null;
+    });
     const [scannedAttendee, setScannedAttendee] = useState(null);
-    const [scannedLoading, setScannedLoading] = useState(false);
+    const [scannedLoading, setScannedLoading] = useState(() => {
+        if (typeof window !== "undefined") {
+            const path = window.location.pathname;
+            const hash = window.location.hash;
+            return path.includes("/verify/") || hash.includes("verify/");
+        }
+        return false;
+    });
     const [scannedError, setScannedError] = useState("");
+    const [copiedPassToken, setCopiedPassToken] = useState(false);
 
     // Form element ref for smooth mobile auto-scroll
     const formCardRef = useRef(null);
@@ -125,10 +146,18 @@ export default function App() {
         const token = existingSubmission?.qrToken || successData?.qrToken;
         if (token) {
             // Encode clickable verification URL from VITE_PASS_URL .env (or origin / Wi-Fi fallback)
-            const envPassUrl = (import.meta.env.VITE_PASS_URL || "").trim().replace(/\/+$/, "");
-            let appBase = envPassUrl || window.location.origin;
-            if (!envPassUrl && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
+            let appBase = (import.meta.env.VITE_PASS_URL || "").trim().replace(/\/+$/, "");
+            if (typeof window !== "undefined" && window.location.origin) {
+                // In production (e.g. Vercel), always prefer the real origin
+                if (!window.location.hostname.includes("localhost") && !window.location.hostname.includes("127.0.0.1")) {
+                    appBase = window.location.origin;
+                }
+            }
+            if (!appBase && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
                 appBase = "http://192.168.0.4:5173";
+            }
+            if (!appBase && typeof window !== "undefined") {
+                appBase = window.location.origin;
             }
             const passUrl = `${appBase}/verify/${token}`;
             QRCode.toDataURL(passUrl, {
@@ -168,41 +197,51 @@ export default function App() {
                 setScannedLoading(true);
                 setScannedError("");
 
-                try {
-                    const apiBase = (import.meta.env.VITE_API_URL || "").trim().replace(/\/+$/, "");
-                    const baseUrl = apiBase || `${window.location.protocol}//${window.location.hostname}:5000/api`;
-                    const res = await fetch(`${baseUrl}/verify/${cleanToken}?json=true`, {
-                        headers: { Accept: "application/json" },
-                    });
-                    const data = await res.json();
-                    if (data.valid && data.participant) {
-                        setScannedAttendee(data.participant);
-                    } else {
-                        setScannedError(data.message || "No attendee record matches this pass code.");
-                    }
-                } catch {
+                // Multi-endpoint fallback to ensure verification works seamlessly
+                const candidateUrls = [
+                    (import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL.replace(/\/+$/, "")}/verify/${cleanToken}?json=true` : null),
+                    `https://xcelerate-2k26.onrender.com/api/verify/${cleanToken}?json=true`,
+                    `/api/verify/${cleanToken}?json=true`,
+                    `${window.location.protocol}//${window.location.hostname}:5000/api/verify/${cleanToken}?json=true`,
+                ].filter(Boolean);
+
+                let resolved = false;
+                for (const url of candidateUrls) {
                     try {
-                        const res2 = await fetch(`/verify/${cleanToken}?json=true`, {
-                            headers: { Accept: "application/json" },
-                        });
-                        const data2 = await res2.json();
-                        if (data2.valid && data2.participant) {
-                            setScannedAttendee(data2.participant);
-                        } else {
-                            setScannedError(data2.message || "No attendee record matches this pass code.");
+                        const res = await fetch(url, { headers: { Accept: "application/json" } });
+                        const data = await res.json();
+                        if (data && (data.valid !== undefined || data.success !== undefined)) {
+                            if (data.valid && data.participant) {
+                                setScannedAttendee(data.participant);
+                            } else {
+                                setScannedError(data.message || "No attendee record matches this pass code.");
+                            }
+                            resolved = true;
+                            break;
                         }
                     } catch {
-                        setScannedError("Could not reach verification server. Please check your connection.");
+                        // try next candidate
                     }
-                } finally {
-                    setScannedLoading(false);
                 }
+
+                if (!resolved) {
+                    setScannedError("Could not reach verification server. Please check your internet connection.");
+                }
+                setScannedLoading(false);
+            } else {
+                setScannedPassToken(null);
+                setScannedAttendee(null);
+                setScannedError("");
             }
         };
 
         checkUrl();
         window.addEventListener("hashchange", checkUrl);
-        return () => window.removeEventListener("hashchange", checkUrl);
+        window.addEventListener("popstate", checkUrl);
+        return () => {
+            window.removeEventListener("hashchange", checkUrl);
+            window.removeEventListener("popstate", checkUrl);
+        };
     }, []);
 
     // Triple-click on ACE Logo triggers admin offline desk modal
@@ -729,6 +768,268 @@ export default function App() {
         </>
     );
 
+    // =========================================================
+    // STANDALONE ATTENDEE PASS VIEW (WHEN SCANNED VIA QR CODE)
+    // The exact green-themed black card design from verifyController!
+    // =========================================================
+    if (scannedPassToken) {
+        return (
+            <div style={{
+                minHeight: "100vh",
+                background: "#090d16",
+                color: "#f1f5f9",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "24px 16px",
+                fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+            }}>
+                <div style={{
+                    maxWidth: "440px",
+                    width: "100%",
+                    background: "#111827",
+                    border: "1px solid rgba(255, 255, 255, 0.1)",
+                    borderRadius: "24px",
+                    overflow: "hidden",
+                    boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.8)",
+                    textAlign: "center"
+                }}>
+                    {scannedLoading ? (
+                        <div style={{ padding: "48px 24px" }}>
+                            <div style={{
+                                width: "42px",
+                                height: "42px",
+                                border: "3px solid rgba(16, 185, 129, 0.2)",
+                                borderTop: "3px solid #34d399",
+                                borderRadius: "50%",
+                                margin: "0 auto 18px",
+                                animation: "spin 0.9s linear infinite"
+                            }}></div>
+                            <h3 style={{ color: "#ffffff", fontSize: "18px", fontWeight: "700", marginBottom: "6px" }}>
+                                Verifying Attendee Pass...
+                            </h3>
+                            <p style={{ color: "#9ca3af", fontSize: "13px" }}>
+                                Authenticating pass with official registry
+                            </p>
+                        </div>
+                    ) : scannedError ? (
+                        <div>
+                            {/* RED ERROR HEADER */}
+                            <div style={{
+                                padding: "32px 20px 24px",
+                                background: "linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%)",
+                                position: "relative"
+                            }}>
+                                <div style={{
+                                    display: "inline-block",
+                                    background: "rgba(255, 255, 255, 0.25)",
+                                    color: "#fff",
+                                    fontSize: "11px",
+                                    fontWeight: "800",
+                                    textTransform: "uppercase",
+                                    letterSpacing: "1.5px",
+                                    padding: "6px 14px",
+                                    borderRadius: "9999px",
+                                    marginBottom: "12px",
+                                    backdropFilter: "blur(4px)"
+                                }}>
+                                    INVALID TOKEN ✗
+                                </div>
+                                <h1 style={{ fontSize: "22px", fontWeight: "800", color: "#fff", marginBottom: "4px" }}>
+                                    Pass Not Found
+                                </h1>
+                                <p style={{ color: "rgba(255, 255, 255, 0.85)", fontSize: "13px", fontWeight: "500" }}>
+                                    Xcelerate-2K26 &bull; SRKR ACM Chapter
+                                </p>
+                            </div>
+
+                            <div style={{ padding: "24px 20px" }}>
+                                <p style={{ color: "#ef4444", fontSize: "14px", marginBottom: "12px" }}>
+                                    {scannedError}
+                                </p>
+                                <p style={{ fontFamily: "monospace", color: "#9ca3af", background: "#1f2937", padding: "10px", borderRadius: "8px", fontSize: "13px", marginBottom: "20px", wordBreak: "break-all" }}>
+                                    {scannedPassToken}
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setScannedPassToken(null);
+                                        setScannedAttendee(null);
+                                        setScannedError("");
+                                        window.history.pushState({}, "", "/");
+                                    }}
+                                    style={{
+                                        background: "linear-gradient(135deg, #0284c7 0%, #2563eb 100%)",
+                                        color: "#ffffff",
+                                        border: "none",
+                                        borderRadius: "12px",
+                                        padding: "12px 24px",
+                                        fontWeight: "700",
+                                        fontSize: "14px",
+                                        cursor: "pointer",
+                                        width: "100%"
+                                    }}
+                                >
+                                    &larr; Return to Event Home
+                                </button>
+                            </div>
+                        </div>
+                    ) : scannedAttendee ? (
+                        <div>
+                            {/* GREEN HEADER */}
+                            <div style={{
+                                padding: "32px 20px 24px",
+                                background: "linear-gradient(135deg, #064e3b 0%, #065f46 100%)",
+                                position: "relative"
+                            }}>
+                                <div style={{
+                                    display: "inline-block",
+                                    background: "rgba(255, 255, 255, 0.25)",
+                                    color: "#fff",
+                                    fontSize: "11px",
+                                    fontWeight: "800",
+                                    textTransform: "uppercase",
+                                    letterSpacing: "1.5px",
+                                    padding: "6px 14px",
+                                    borderRadius: "9999px",
+                                    marginBottom: "12px",
+                                    backdropFilter: "blur(4px)"
+                                }}>
+                                    VALID ATTENDEE PASS ✓
+                                </div>
+                                <h1 style={{ fontSize: "22px", fontWeight: "800", color: "#fff", marginBottom: "4px" }}>
+                                    {scannedAttendee.name}
+                                </h1>
+                                <p style={{ color: "rgba(255, 255, 255, 0.85)", fontSize: "13px", fontWeight: "500" }}>
+                                    Xcelerate-2K26 &bull; SRKR ACM Chapter
+                                </p>
+                            </div>
+
+                            {/* BODY DETAIL ROWS */}
+                            <div style={{ padding: "24px 20px", textAlign: "left" }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid rgba(255, 255, 255, 0.07)", fontSize: "14px" }}>
+                                    <span style={{ color: "#9ca3af", fontWeight: "600" }}>Registration No</span>
+                                    <span style={{ color: "#f9fafb", fontWeight: "700", fontFamily: "monospace", fontSize: "15px" }}>{scannedAttendee.registrationNumber}</span>
+                                </div>
+
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid rgba(255, 255, 255, 0.07)", fontSize: "14px" }}>
+                                    <span style={{ color: "#9ca3af", fontWeight: "600" }}>Branch &amp; Section</span>
+                                    <span style={{ color: "#f9fafb", fontWeight: "700" }}>{scannedAttendee.branch} &bull; Sec {scannedAttendee.section}</span>
+                                </div>
+
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid rgba(255, 255, 255, 0.07)", fontSize: "14px" }}>
+                                    <span style={{ color: "#9ca3af", fontWeight: "600" }}>Membership</span>
+                                    <span style={{ color: "#f9fafb", fontWeight: "700" }}>
+                                        {scannedAttendee.isAcmMember ? "🌟 ACE Member (Verified)" : "Non-Member"}
+                                    </span>
+                                </div>
+
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid rgba(255, 255, 255, 0.07)", fontSize: "14px" }}>
+                                    <span style={{ color: "#9ca3af", fontWeight: "600" }}>Payment Status</span>
+                                    <span style={{ color: "#34d399", fontWeight: "700" }}>
+                                        {scannedAttendee.paymentMode === "Offline" ? "Offline Desk (Cash)" : "Online (UPI) ✓"}
+                                    </span>
+                                </div>
+
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid rgba(255, 255, 255, 0.07)", fontSize: "14px" }}>
+                                    <span style={{ color: "#9ca3af", fontWeight: "600" }}>Pass Code</span>
+                                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                                        <span style={{ fontFamily: "monospace", background: "rgba(56, 189, 248, 0.15)", color: "#38bdf8", padding: "4px 8px", borderRadius: "6px", fontSize: "13px" }}>
+                                            {scannedAttendee.qrToken}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(scannedAttendee.qrToken);
+                                                setCopiedPassToken(true);
+                                                setTimeout(() => setCopiedPassToken(false), 2000);
+                                            }}
+                                            style={{ background: "rgba(56, 189, 248, 0.15)", border: "1px solid rgba(56, 189, 248, 0.3)", borderRadius: "6px", color: "#38bdf8", padding: "4px 8px", fontSize: "11px", cursor: "pointer" }}
+                                        >
+                                            {copiedPassToken ? "✓" : "Copy"}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* CHECK-IN STATUS */}
+                                <div style={{
+                                    marginTop: "18px",
+                                    padding: "12px 14px",
+                                    borderRadius: "12px",
+                                    fontWeight: "700",
+                                    fontSize: "13px",
+                                    textAlign: "center",
+                                    background: scannedAttendee.attendanceMarked ? "rgba(16, 185, 129, 0.15)" : "rgba(245, 158, 11, 0.15)",
+                                    color: scannedAttendee.attendanceMarked ? "#34d399" : "#fbbf24",
+                                    border: `1px solid ${scannedAttendee.attendanceMarked ? "rgba(16, 185, 129, 0.3)" : "rgba(245, 158, 11, 0.3)"}`
+                                }}>
+                                    {scannedAttendee.attendanceMarked
+                                        ? `✓ Attendance Recorded (${new Date(scannedAttendee.attendanceMarkedAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })})`
+                                        : "⏳ Ready for Check-in at Entry Desk"}
+                                </div>
+
+                                {/* ACTION BUTTONS */}
+                                <div style={{ display: "flex", gap: "10px", marginTop: "18px" }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setScannedPassToken(null);
+                                            setScannedAttendee(null);
+                                            setScannedError("");
+                                            window.history.pushState({}, "", "/");
+                                        }}
+                                        style={{
+                                            flex: 1,
+                                            background: "rgba(255, 255, 255, 0.08)",
+                                            color: "#e2e8f0",
+                                            border: "1px solid rgba(255, 255, 255, 0.15)",
+                                            borderRadius: "10px",
+                                            padding: "10px 14px",
+                                            fontWeight: "600",
+                                            fontSize: "13px",
+                                            cursor: "pointer"
+                                        }}
+                                    >
+                                        &larr; Event Website
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => window.print()}
+                                        style={{
+                                            flex: 1,
+                                            background: "rgba(16, 185, 129, 0.15)",
+                                            color: "#34d399",
+                                            border: "1px solid rgba(16, 185, 129, 0.3)",
+                                            borderRadius: "10px",
+                                            padding: "10px 14px",
+                                            fontWeight: "600",
+                                            fontSize: "13px",
+                                            cursor: "pointer"
+                                        }}
+                                    >
+                                        Print Pass
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* FOOTER */}
+                            <div style={{
+                                padding: "16px 20px",
+                                background: "#0d131f",
+                                borderTop: "1px solid rgba(255, 255, 255, 0.05)",
+                                fontSize: "12px",
+                                color: "#6b7280"
+                            }}>
+                                SRKR ACM Student Chapter &bull; Technical Event 2026
+                            </div>
+                        </div>
+                    ) : null}
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="app">
             <AsteroidsBackground />
@@ -758,108 +1059,6 @@ export default function App() {
 
             {/* MAIN CONTENT */}
             <main className="main-content">
-                {/* VERIFIED ATTENDEE PASS VIEW (When scanned via camera) */}
-                {scannedPassToken && (
-                    <section className="registration-wrapper" style={{ maxWidth: "460px", margin: "32px auto 48px" }}>
-                        <div className="registration-card" style={{ textAlign: "center", padding: "32px 24px", borderRadius: "24px" }}>
-                            {scannedLoading ? (
-                                <div style={{ padding: "40px 20px" }}>
-                                    <div className="spinner" style={{ margin: "0 auto 16px" }}></div>
-                                    <p style={{ color: "#94a3b8", fontWeight: "600" }}>Verifying Attendee Pass...</p>
-                                </div>
-                            ) : scannedError ? (
-                                <div>
-                                    <div style={{ width: "56px", height: "56px", borderRadius: "50%", background: "rgba(239, 68, 68, 0.15)", color: "#ef4444", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", fontSize: "24px", fontWeight: "bold" }}>
-                                        ✕
-                                    </div>
-                                    <div style={{ display: "inline-block", background: "rgba(239, 68, 68, 0.2)", color: "#f87171", fontSize: "11px", fontWeight: "800", textTransform: "uppercase", letterSpacing: "1px", padding: "4px 12px", borderRadius: "999px", marginBottom: "12px" }}>
-                                        Invalid Pass
-                                    </div>
-                                    <h2 style={{ color: "#fff", fontSize: "20px", marginBottom: "8px" }}>Attendee Not Found</h2>
-                                    <p style={{ color: "#94a3b8", fontSize: "14px", marginBottom: "20px" }}>{scannedError}</p>
-                                    <button
-                                        type="button"
-                                        className="register-another-btn"
-                                        onClick={() => {
-                                            setScannedPassToken(null);
-                                            window.history.pushState({}, "", "/");
-                                        }}
-                                    >
-                                        Return to Event Home
-                                    </button>
-                                </div>
-                            ) : scannedAttendee ? (
-                                <div>
-                                    <div style={{ display: "inline-block", background: "rgba(16, 185, 129, 0.2)", color: "#34d399", fontSize: "11px", fontWeight: "800", textTransform: "uppercase", letterSpacing: "1.5px", padding: "6px 14px", borderRadius: "999px", marginBottom: "12px", border: "1px solid rgba(16, 185, 129, 0.4)" }}>
-                                        VALID ATTENDEE PASS ✓
-                                    </div>
-                                    <h1 style={{ color: "#fff", fontSize: "22px", fontWeight: "800", margin: "0 0 4px" }}>
-                                        {scannedAttendee.name}
-                                    </h1>
-                                    <p style={{ color: "#94a3b8", fontSize: "13px", margin: "0 0 24px" }}>
-                                        Xcelerate-2K26 &bull; SRKR ACM Chapter
-                                    </p>
-
-                                    <div className="submitted-receipt-card" style={{ textAlign: "left", marginBottom: "20px" }}>
-                                        <div className="submitted-receipt-row">
-                                            <span className="submitted-label">College Roll No</span>
-                                            <span className="submitted-val">{scannedAttendee.registrationNumber}</span>
-                                        </div>
-                                        <div className="submitted-receipt-row">
-                                            <span className="submitted-label">Branch &amp; Section</span>
-                                            <span className="submitted-val">{scannedAttendee.branch} &bull; Sec {scannedAttendee.section}</span>
-                                        </div>
-                                        <div className="submitted-receipt-row">
-                                            <span className="submitted-label">Membership</span>
-                                            <span className="submitted-val">
-                                                {scannedAttendee.isAcmMember ? "🌟 ACE Member (Verified)" : "🎓 Regular Participant"}
-                                            </span>
-                                        </div>
-                                        <div className="submitted-receipt-row">
-                                            <span className="submitted-label">Payment Status</span>
-                                            <span className="submitted-val" style={{ color: "#34d399", fontWeight: "700" }}>
-                                                {scannedAttendee.paymentMode === "Offline" ? "Offline Desk (Cash)" : "Online (UPI) ✓"}
-                                            </span>
-                                        </div>
-                                        <div className="submitted-receipt-row">
-                                            <span className="submitted-label">Pass Code</span>
-                                            <span className="submitted-val" style={{ fontFamily: "monospace", color: "#38bdf8" }}>
-                                                {scannedAttendee.qrToken}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <div style={{
-                                        padding: "14px",
-                                        borderRadius: "12px",
-                                        fontWeight: "700",
-                                        fontSize: "14px",
-                                        marginBottom: "24px",
-                                        background: scannedAttendee.attendanceMarked ? "rgba(16, 185, 129, 0.15)" : "rgba(245, 158, 11, 0.15)",
-                                        color: scannedAttendee.attendanceMarked ? "#34d399" : "#fbbf24",
-                                        border: `1px solid ${scannedAttendee.attendanceMarked ? "rgba(16, 185, 129, 0.3)" : "rgba(245, 158, 11, 0.3)"}`
-                                    }}>
-                                        {scannedAttendee.attendanceMarked
-                                            ? `✓ Attendance Recorded (${new Date(scannedAttendee.attendanceMarkedAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })})`
-                                            : "⏳ Ready for Check-in at Entry Desk"}
-                                    </div>
-
-                                    <button
-                                        type="button"
-                                        className="register-another-btn"
-                                        onClick={() => {
-                                            setScannedPassToken(null);
-                                            window.history.pushState({}, "", "/");
-                                        }}
-                                    >
-                                        Return to Event Home
-                                    </button>
-                                </div>
-                            ) : null}
-                        </div>
-                    </section>
-                )}
-
                 {/* HERO BANNER */}
                 <section className="hero-wrapper">
                     <div className="hero-pill-badge">
