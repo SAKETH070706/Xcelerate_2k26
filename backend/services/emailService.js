@@ -28,6 +28,8 @@ export const generateQrDataUrl = async (content) => {
  * Constructs modern, mobile-friendly HTML email for Xcelerate-2K26
  */
 const buildEmailHtml = ({ name, isAcmMember, qrDataUrl }) => {
+    const bannerUrl = (process.env.EMAIL_HEADER_IMAGE_URL || "https://res.cloudinary.com/cc4mb4xr/image/upload/v1791143182/Neon_Xcelerate_ACM_Tech_Banner.png").trim();
+
     const qrSectionHtml = qrDataUrl ? `
         <!-- QR CODE ATTENDANCE SECTION -->
         <p style="margin: 22px 0 6px; font-weight: 700; color: #0f172a; font-size: 15px;">
@@ -57,9 +59,15 @@ const buildEmailHtml = ({ name, isAcmMember, qrDataUrl }) => {
 <body style="margin: 0; padding: 24px 16px; background-color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b;">
     <div style="max-width: 600px; margin: 0 auto; font-size: 15px; line-height: 1.7;">
         
-        <h2 style="margin: 0 0 16px; font-size: 20px; font-weight: 700; color: #0f172a;">
-            Xcelerate-2K26 Registration Successful! 🎉
-        </h2>
+        <!-- HEADER BANNER IMAGE -->
+        <div style="margin: 0 0 24px; text-align: center;">
+            <img 
+                src="${bannerUrl}" 
+                alt="Xcelerate-2K26 • SRKR ACM Student Chapter" 
+                width="600" 
+                style="width: 100%; max-width: 600px; height: auto; display: block; border-radius: 12px; margin: 0 auto;"
+            />
+        </div>
 
         <p style="margin: 0 0 14px; font-size: 15px; color: #0f172a; font-weight: 600;">
             Dear ${name},
