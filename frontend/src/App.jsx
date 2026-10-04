@@ -925,31 +925,11 @@ export default function App() {
                                     </span>
                                 </div>
 
-                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid rgba(255, 255, 255, 0.07)", fontSize: "14px" }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", fontSize: "14px" }}>
                                     <span style={{ color: "#9ca3af", fontWeight: "600" }}>Payment Status</span>
                                     <span style={{ color: "#34d399", fontWeight: "700" }}>
                                         {scannedAttendee.paymentMode === "Offline" ? "Offline Desk (Cash)" : "Online (UPI) ✓"}
                                     </span>
-                                </div>
-
-                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid rgba(255, 255, 255, 0.07)", fontSize: "14px" }}>
-                                    <span style={{ color: "#9ca3af", fontWeight: "600" }}>Pass Code</span>
-                                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                                        <span style={{ fontFamily: "monospace", background: "rgba(56, 189, 248, 0.15)", color: "#38bdf8", padding: "4px 8px", borderRadius: "6px", fontSize: "13px" }}>
-                                            {scannedAttendee.qrToken}
-                                        </span>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                navigator.clipboard.writeText(scannedAttendee.qrToken);
-                                                setCopiedPassToken(true);
-                                                setTimeout(() => setCopiedPassToken(false), 2000);
-                                            }}
-                                            style={{ background: "rgba(56, 189, 248, 0.15)", border: "1px solid rgba(56, 189, 248, 0.3)", borderRadius: "6px", color: "#38bdf8", padding: "4px 8px", fontSize: "11px", cursor: "pointer" }}
-                                        >
-                                            {copiedPassToken ? "✓" : "Copy"}
-                                        </button>
-                                    </div>
                                 </div>
 
                                 {/* CHECK-IN STATUS */}
@@ -969,8 +949,8 @@ export default function App() {
                                         : "⏳ Ready for Check-in at Entry Desk"}
                                 </div>
 
-                                {/* ACTION BUTTONS */}
-                                <div style={{ display: "flex", gap: "10px", marginTop: "18px" }}>
+                                {/* ACTION BUTTON */}
+                                <div style={{ marginTop: "18px" }}>
                                     <button
                                         type="button"
                                         onClick={() => {
@@ -980,35 +960,18 @@ export default function App() {
                                             window.history.pushState({}, "", "/");
                                         }}
                                         style={{
-                                            flex: 1,
+                                            width: "100%",
                                             background: "rgba(255, 255, 255, 0.08)",
                                             color: "#e2e8f0",
                                             border: "1px solid rgba(255, 255, 255, 0.15)",
-                                            borderRadius: "10px",
-                                            padding: "10px 14px",
+                                            borderRadius: "12px",
+                                            padding: "12px 18px",
                                             fontWeight: "600",
-                                            fontSize: "13px",
+                                            fontSize: "14px",
                                             cursor: "pointer"
                                         }}
                                     >
-                                        &larr; Event Website
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => window.print()}
-                                        style={{
-                                            flex: 1,
-                                            background: "rgba(16, 185, 129, 0.15)",
-                                            color: "#34d399",
-                                            border: "1px solid rgba(16, 185, 129, 0.3)",
-                                            borderRadius: "10px",
-                                            padding: "10px 14px",
-                                            fontWeight: "600",
-                                            fontSize: "13px",
-                                            cursor: "pointer"
-                                        }}
-                                    >
-                                        Print Pass
+                                        &larr; Return to Event Home
                                     </button>
                                 </div>
                             </div>

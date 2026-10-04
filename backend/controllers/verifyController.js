@@ -115,10 +115,6 @@ const renderPage = ({ valid, participant, query }) => `
                     <span class="label">Payment Status</span>
                     <span class="value" style="color: #34d399;">${participant.paymentMode === "Offline" ? "Offline Desk (Cash)" : "Online (UPI)"}</span>
                 </div>
-                <div class="detail-row">
-                    <span class="label">Pass Code</span>
-                    <span class="value token-tag">${participant.qrToken}</span>
-                </div>
                 <div class="checkin-status">
                     ${participant.attendanceMarked
                         ? `✓ Attendance Recorded (${new Date(participant.attendanceMarkedAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })})`
