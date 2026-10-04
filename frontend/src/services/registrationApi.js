@@ -29,7 +29,7 @@ const API = axios.create({
 });
 
 /**
- * Check if a 10-digit phone number is registered in the official 2025 ACE / ACM member database
+ * Check if a 10-digit phone number is registered in the official 2025 ACM member database
  */
 export const checkMemberPhone = async (phone) => {
     API.defaults.baseURL = getBaseUrl();

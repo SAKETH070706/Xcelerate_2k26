@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import { registerUser } from "../services/registrationService.js";
 
 /**
- * Check if a phone number belongs to an official ACE / ACM member from xcelerate_2026_batch
+ * Check if a phone number belongs to an official ACM member from xcelerate_2026_batch
  */
 export const checkMember = async (req, res, next) => {
     try {

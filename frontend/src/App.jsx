@@ -25,8 +25,8 @@ const SECTION_OPTIONS = ["A", "B", "C", "D", "E", "F"];
 
 export default function App() {
     // Exact 3 Phases:
-    // Phase 1 = Membership Check ("Are you an ACE Member?" -> If yes, shows WhatsApp number field right there)
-    // Phase 2 = Student Details (Autofilled profile + ONLY remaining details: Roll No & Section for ACE; manual for Non-Members)
+    // Phase 1 = Membership Check ("Are you an ACM Member?" -> If yes, shows WhatsApp number field right there)
+    // Phase 2 = Student Details (Autofilled profile + ONLY remaining details: Roll No & Section for ACM; manual for Non-Members)
     // Phase 3 = Payment & Verification (UPI QR + Screenshot + 12-digit UTR ID + unique validation)
     const [currentStep, setCurrentStep] = useState(1);
     const [membershipChoice, setMembershipChoice] = useState(null); // null | 'yes' | 'no'
@@ -244,7 +244,7 @@ export default function App() {
         };
     }, []);
 
-    // Triple-click on ACE Logo triggers admin offline desk modal
+    // Triple-click on ACM Logo triggers admin offline desk modal
     const handleLogoClick = () => {
         logoClickCountRef.current += 1;
         if (logoClickTimerRef.current) clearTimeout(logoClickTimerRef.current);
@@ -353,14 +353,14 @@ export default function App() {
         setError("");
 
         if (!membershipChoice) {
-            setError("Please select whether you are an ACE Member or a Regular Participant.");
+            setError("Please select whether you are an ACM Member or a Regular Participant.");
             return;
         }
 
         if (membershipChoice === "yes") {
             const cleanPhone = formData.whatsappNumber.replace(/\D/g, "").slice(-10);
             if (cleanPhone.length !== 10) {
-                setError("Please enter your registered 10-digit WhatsApp phone number.");
+                setError("Please enter your 10-digit WhatsApp phone number that is registered in the official ACM WhatsApp group.");
                 return;
             }
 
@@ -384,7 +384,7 @@ export default function App() {
                     setCurrentStep(2);
                     scrollToForm();
                 } else {
-                    setError("This phone number is not found in the ACE 2025 Member Directory. Please verify your number or select 'No, Regular Participant'.");
+                    setError("This phone number was not found in the ACM 2025 Member Directory. Please make sure you entered the exact phone number added in the official ACM WhatsApp group, or choose 'No, Regular Participant'.");
                 }
             } catch (err) {
                 console.error("Member check error:", err);
@@ -980,7 +980,7 @@ export default function App() {
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid rgba(255, 255, 255, 0.07)", fontSize: "14px" }}>
                                     <span style={{ color: "#9ca3af", fontWeight: "600" }}>Membership</span>
                                     <span style={{ color: "#f9fafb", fontWeight: "700" }}>
-                                        {scannedAttendee.isAcmMember ? "🌟 ACE Member (Verified)" : "Non-Member"}
+                                        {scannedAttendee.isAcmMember ? "🌟 ACM Member (Verified)" : "Non-Member"}
                                     </span>
                                 </div>
 
@@ -1207,7 +1207,7 @@ export default function App() {
                                     <div className="submitted-receipt-row">
                                         <span className="submitted-label">Category</span>
                                         <span className="submitted-val">
-                                            {existingSubmission.isAcmMember ? "🌟 ACE Member (Verified)" : "🎓 Regular Participant"}
+                                            {existingSubmission.isAcmMember ? "🌟 ACM Member (Verified)" : "🎓 Regular Participant"}
                                         </span>
                                     </div>
                                     <div className="submitted-receipt-row">
@@ -1311,7 +1311,7 @@ export default function App() {
                                     <div className="step-pane">
                                         <div className="step-header-box">
                                             <span className="step-header-tag">Phase 01 of 03</span>
-                                            <h3 className="step-header-title">ACE Chapter Membership Check</h3>
+                                            <h3 className="step-header-title">ACM Chapter Membership Check</h3>
                                             <p className="step-header-desc">
                                                 Select your membership status to proceed.
                                             </p>
@@ -1320,7 +1320,7 @@ export default function App() {
                                         {/* CHOICE CARDS */}
                                         <div className="membership-choice-container">
                                             <div className="membership-choice-label">
-                                                Are you an ACE / ACM Chapter Member? <span className="req-star">*</span>
+                                                Are you an ACM Chapter Member? <span className="req-star">*</span>
                                             </div>
                                             <div className="membership-cards-grid">
                                                 <div
@@ -1331,7 +1331,7 @@ export default function App() {
                                                         {membershipChoice === "yes" && <div className="dot-inner" />}
                                                     </div>
                                                     <div className="card-text-block">
-                                                        <h4>🌟 Yes, I am an ACE Member</h4>
+                                                        <h4>🌟 Yes, I am an ACM Member</h4>
                                                         <p>Batch 2025 or 2nd-Year Lateral Member</p>
                                                     </div>
                                                 </div>
@@ -1351,13 +1351,39 @@ export default function App() {
                                             </div>
                                         </div>
 
-                                        {/* IF HE CLICKS ACE MEMBER: IN THAT ONLY IT CONTAINS THE WHATSAPP NUMBER LABEL */}
+                                        {/* IF ACM MEMBER: CLEAR NOTICE & WHATSAPP NUMBER INPUT */}
                                         {membershipChoice === "yes" && (
                                             <div className="phase1-phone-container">
+                                                {/* PROMINENT ACM WHATSAPP GROUP NOTICE */}
+                                                <div
+                                                    className="acm-group-notice-banner"
+                                                    style={{
+                                                        background: "rgba(14, 165, 233, 0.12)",
+                                                        border: "1.5px solid rgba(56, 189, 248, 0.4)",
+                                                        borderRadius: "12px",
+                                                        padding: "14px 16px",
+                                                        marginBottom: "16px",
+                                                        display: "flex",
+                                                        alignItems: "flex-start",
+                                                        gap: "12px",
+                                                        boxShadow: "0 4px 14px rgba(2, 132, 199, 0.12)"
+                                                    }}
+                                                >
+                                                    <span style={{ fontSize: "22px", lineHeight: "1" }}>📲</span>
+                                                    <div>
+                                                        <div style={{ color: "#38bdf8", fontWeight: "800", fontSize: "14px", marginBottom: "4px", letterSpacing: "0.2px" }}>
+                                                            ACM WhatsApp Group Number Required
+                                                        </div>
+                                                        <div style={{ color: "#e2e8f0", fontSize: "13px", lineHeight: "1.5" }}>
+                                                            Please enter the <strong>exact phone number that is currently added in your official ACM WhatsApp Group</strong>. Your membership is verified automatically using this number.
+                                                        </div>
+                                                    </div>
+                                                </div>
+
                                                 <div className="field">
                                                     <label>
                                                         <svg className="field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-                                                        Registered WhatsApp Number <span className="req-star">*</span>
+                                                        Registered WhatsApp Number <span style={{ color: "#38bdf8", fontWeight: "600", fontSize: "12px" }}>(ACM Group Number)</span> <span className="req-star">*</span>
                                                     </label>
                                                     <input
                                                         type="tel"
@@ -1368,13 +1394,13 @@ export default function App() {
                                                             setFormData((prev) => ({ ...prev, whatsappNumber: val }));
                                                             if (error) setError("");
                                                         }}
-                                                        placeholder="10-digit WhatsApp number"
+                                                        placeholder="10-digit number present in ACM WhatsApp group"
                                                         pattern="[0-9]{10}"
                                                         maxLength="10"
                                                         className="mobile-phone-input"
                                                     />
-                                                    <span className="field-helper-text">
-                                                        Enter your registered 10-digit WhatsApp number. We'll automatically verify and fetch your details.
+                                                    <span className="field-helper-text" style={{ color: "#94a3b8", display: "block", marginTop: "6px" }}>
+                                                        ⚠️ <strong>Note:</strong> Must be the exact phone number added in the official ACM WhatsApp group.
                                                     </span>
                                                 </div>
                                             </div>
@@ -1423,19 +1449,19 @@ export default function App() {
                                             </h3>
                                             <p className="step-header-desc">
                                                 {formData.isAcmMember
-                                                    ? "Your ACE profile is verified. Fill in your college roll number and section to proceed."
+                                                    ? "Your ACM profile is verified. Fill in your college roll number and section to proceed."
                                                     : "Enter your academic and contact details for event registration."}
                                             </p>
                                         </div>
 
-                                        {/* IF ACE MEMBER: SLEEK READ-ONLY VERIFIED CARD + ONLY REMAINING DETAILS */}
+                                        {/* IF ACM MEMBER: SLEEK READ-ONLY VERIFIED CARD + ONLY REMAINING DETAILS */}
                                         {formData.isAcmMember ? (
                                             <>
                                                 <div className="verified-member-card">
                                                     <div className="verified-card-header">
                                                         <div className="verified-pill">
                                                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                                            Verified ACE Member
+                                                            Verified ACM Member
                                                         </div>
                                                     </div>
                                                     <div className="verified-info-grid">
@@ -1457,7 +1483,7 @@ export default function App() {
                                                         </div>
                                                     </div>
                                                     <div className="verified-card-footer">
-                                                        🔒 Verified from ACE 2025 Directory
+                                                        🔒 Verified from ACM 2025 Directory
                                                     </div>
                                                 </div>
 
@@ -1686,7 +1712,7 @@ export default function App() {
                                             <div className="summary-row">
                                                 <span className="summary-label">Category</span>
                                                 <span className="summary-val">
-                                                    {formData.isAcmMember ? "🌟 ACE Member (Verified)" : "🎓 Regular Participant"}
+                                                    {formData.isAcmMember ? "🌟 ACM Member (Verified)" : "🎓 Regular Participant"}
                                                 </span>
                                             </div>
                                             <div className="summary-row">
@@ -1812,7 +1838,7 @@ export default function App() {
                                                     {isOfflineDesk
                                                         ? "I confirm that cash payment has been collected at the registration desk and student details are authentic."
                                                         : formData.isAcmMember
-                                                        ? "I confirm that I am an active ACE Member and the submitted payment transaction reference is genuine."
+                                                        ? "I confirm that I am an active ACM Member and the submitted payment transaction reference is genuine."
                                                         : "I confirm that the details provided and payment screenshot are genuine and authentic."}
                                                 </span>
                                             </label>
@@ -1980,7 +2006,7 @@ export default function App() {
                             <div className="receipt-row">
                                 <span className="receipt-label">Category</span>
                                 <span className="receipt-val">
-                                    {successData.isAcmMember ? "🌟 ACE Member (Verified)" : "Regular Attendee"}
+                                    {successData.isAcmMember ? "🌟 ACM Member (Verified)" : "Regular Attendee"}
                                 </span>
                             </div>
                             <div className="receipt-row">

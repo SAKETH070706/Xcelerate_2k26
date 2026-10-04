@@ -92,7 +92,7 @@ const registrationSchema = Joi.object({
     isAcmMember: Joi.boolean()
         .required()
         .messages({
-            "any.required": "Please indicate if you are an ACE / ACM Member.",
+            "any.required": "Please indicate if you are an ACM Member.",
         }),
 
     aceId: Joi.string()

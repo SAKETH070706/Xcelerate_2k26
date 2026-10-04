@@ -109,7 +109,7 @@ const renderPage = ({ valid, participant, query }) => `
                 </div>
                 <div class="detail-row">
                     <span class="label">Membership</span>
-                    <span class="value">${participant.isAcmMember ? "ACE Member (Verified)" : "Non-Member"}</span>
+                    <span class="value">${participant.isAcmMember ? "ACM Member (Verified)" : "Non-Member"}</span>
                 </div>
                 <div class="detail-row">
                     <span class="label">Payment Status</span>

@@ -29,7 +29,7 @@ export const errorMiddleware = (
         } else if (duplicateField === "aceId") {
 
             message =
-                "Unable to generate a unique ACE ID. Please try again.";
+                "Unable to generate a unique participant ID. Please try again.";
 
         }
 
