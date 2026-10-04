@@ -695,21 +695,80 @@ export default function App() {
                                 className={`day-btn ${activeDayIndex === idx ? "active" : ""}`}
                                 onClick={() => setActiveDayIndex(idx)}
                             >
-                                {dayPlan.day}: {dayPlan.title}
+                                <span style={{ fontWeight: "800", marginRight: "6px" }}>{dayPlan.day}</span>
+                                <span style={{ opacity: 0.9 }}>&bull; {dayPlan.title}</span>
                             </button>
                         ))}
                     </div>
 
-                    <div className="schedule-timeline">
-                        {(EVENT_DATA.schedule?.[activeDayIndex]?.sessions || []).map((slot, sIdx) => (
-                            <div key={sIdx} className="timeline-slot">
-                                <div className="slot-time">{slot.time}</div>
-                                <div className="slot-content">
-                                    <div className="slot-title">{slot.title}</div>
-                                    <div className="slot-desc">{slot.description}</div>
-                                </div>
+                    {/* DAY HIGHLIGHT BANNER */}
+                    <div style={{
+                        background: activeDayIndex === 0
+                            ? "linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(56, 189, 248, 0.08))"
+                            : "linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(6, 95, 70, 0.08))",
+                        border: `1.5px solid ${activeDayIndex === 0 ? "#bfdbfe" : "#bbf7d0"}`,
+                        borderRadius: "14px",
+                        padding: "14px 18px",
+                        marginBottom: "18px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px"
+                    }}>
+                        <div style={{
+                            width: "38px",
+                            height: "38px",
+                            borderRadius: "10px",
+                            background: activeDayIndex === 0 ? "#eff6ff" : "#f0fdf4",
+                            color: activeDayIndex === 0 ? "#2563eb" : "#16a34a",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: "18px",
+                            flexShrink: 0
+                        }}>
+                            {activeDayIndex === 0 ? "📘" : "💻"}
+                        </div>
+                        <div>
+                            <div style={{ fontSize: "14.5px", fontWeight: "800", color: "#0f172a" }}>
+                                {activeDayIndex === 0 ? "Day 1: Comprehensive Foundations" : "Day 2: Dedicated Hands-on Lab"}
                             </div>
-                        ))}
+                            <div style={{ fontSize: "12.5px", color: "#475569", lineHeight: "1.4" }}>
+                                {EVENT_DATA.schedule?.[activeDayIndex]?.subtitle}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* TIMELINE AGENDA */}
+                    <div className="schedule-timeline">
+                        {(EVENT_DATA.schedule?.[activeDayIndex]?.sessions || []).map((slot, sIdx) => {
+                            const isBreak = slot.title.toLowerCase().includes("break") || slot.title.toLowerCase().includes("lunch");
+                            const isLab = slot.title.toLowerCase().includes("lab") || slot.title.toLowerCase().includes("hands-on") || slot.title.toLowerCase().includes("allocation");
+                            const isTheory = slot.title.toLowerCase().includes("theory");
+
+                            const pillBadge = isBreak
+                                ? { label: "Refreshment", cls: "pill-break" }
+                                : isLab
+                                ? { label: "Hands-on Lab", cls: "pill-lab" }
+                                : isTheory
+                                ? { label: "Theory Session", cls: "pill-theory" }
+                                : { label: "Ceremony / Event", cls: "pill-ceremony" };
+
+                            return (
+                                <div key={sIdx} className="schedule-card-item">
+                                    <div className="schedule-time-badge">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                        <span>{slot.time}</span>
+                                    </div>
+                                    <div className="schedule-card-body">
+                                        <div className="schedule-card-top">
+                                            <h4 className="schedule-card-title">{slot.title}</h4>
+                                            <span className={`schedule-type-pill ${pillBadge.cls}`}>{pillBadge.label}</span>
+                                        </div>
+                                        <p className="schedule-card-desc">{slot.description}</p>
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             )}
@@ -1041,10 +1100,6 @@ export default function App() {
                         <span>Evolve</span>
                     </div>
 
-                    <p className="hero-lead-text">
-                        A 2-day technical symposium by SRKR ACM. Day 1 foundational theory, followed by a dedicated full-day hands-on workshop in your chosen domain on Day 2.
-                    </p>
-
                     <div className="hero-meta-strip">
                         <div className="hero-meta-item">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
@@ -1066,11 +1121,14 @@ export default function App() {
                             className="hero-details-trigger-btn"
                             onClick={() => {
                                 setActiveEventTab("schedule");
-                                setShowEventModal(true);
+                                const el = document.getElementById("event-guide");
+                                if (el) {
+                                    el.scrollIntoView({ behavior: "smooth", block: "start" });
+                                }
                             }}
                         >
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                            View Event Guide &amp; Schedule
+                            View Event Guide &amp; Schedule &darr;
                         </button>
                     </div>
 
