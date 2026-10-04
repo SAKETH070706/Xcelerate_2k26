@@ -4,6 +4,7 @@ import rateLimit from "express-rate-limit";
 import {
     register,
     checkMember,
+    getPaymentConfig,
 } from "../controllers/registrationController.js";
 
 import {
@@ -11,6 +12,9 @@ import {
 } from "../middleware/validationMiddleware.js";
 
 const router = express.Router();
+
+// Dynamic Payment info (Cloudinary QR code URL, UPI ID)
+router.get("/payment-info", getPaymentConfig);
 
 const registrationLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes

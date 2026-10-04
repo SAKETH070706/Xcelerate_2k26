@@ -30,20 +30,17 @@ export const generateQrDataUrl = async (content) => {
 const buildEmailHtml = ({ name, isAcmMember, qrDataUrl }) => {
     const qrSectionHtml = qrDataUrl ? `
         <!-- QR CODE ATTENDANCE SECTION -->
-        <div style="background: #f8fafc; border: 2px dashed #0284c7; border-radius: 16px; padding: 24px; margin: 28px 0; text-align: center;">
-            <div style="display: inline-block; background: #e0f2fe; color: #0284c7; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 4px 12px; border-radius: 9999px; margin-bottom: 12px;">
-                Official Event Check-in Pass
-            </div>
+        <div style="background: #f8fafc; border: 2px dashed #0284c7; border-radius: 16px; padding: 26px 20px; margin: 28px 0; text-align: center;">
             <h3 style="margin: 0 0 8px; font-size: 18px; font-weight: 700; color: #0f172a;">
                 Your Attendance QR 📲
             </h3>
-            <p style="margin: 0 0 18px; font-size: 14px; line-height: 1.5; color: #475569;">
+            <p style="margin: 0 auto 18px; font-size: 14px; line-height: 1.5; color: #475569; max-width: 440px;">
                 The QR code below is unique to you. Please present it for scanning on both days of the event.
             </p>
-            <div style="background: #ffffff; padding: 14px; display: inline-block; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);">
+            <div style="background: #ffffff; padding: 16px; display: inline-block; border-radius: 14px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08); border: 1px solid #e2e8f0;">
                 <img src="cid:attendance-qr.png" alt="Your Attendance QR Code" width="220" height="220" style="display: block; margin: 0 auto; max-width: 100%; height: auto;" />
             </div>
-            <p style="margin: 12px 0 0; font-size: 12px; color: #64748b;">
+            <p style="margin: 14px 0 0; font-size: 12px; color: #64748b;">
                 (Also attached to this email as <strong>attendance-qr.png</strong>)
             </p>
         </div>
@@ -87,26 +84,12 @@ const buildEmailHtml = ({ name, isAcmMember, qrDataUrl }) => {
                 We’re delighted to have you join us for this two-day technical event, where you’ll <em>Engage, Explore, and Evolve</em> while discovering emerging technologies and exploring your areas of interest.
             </p>
 
-            <!-- EXPLORE CARD -->
-            <div style="background: #f8fafc; border-left: 4px solid #38bdf8; border-radius: 8px; padding: 18px 20px; margin: 24px 0;">
-                <h3 style="margin: 0 0 12px; font-size: 16px; font-weight: 700; color: #0f172a;">
-                    What You’ll Explore 🔍
+            <!-- WHAT YOU'LL EXPLORE CARD -->
+            <div style="background: #f8fafc; border-left: 4px solid #38bdf8; border-radius: 10px; padding: 20px 22px; margin: 26px 0;">
+                <h3 style="margin: 0 0 14px; font-size: 16px; font-weight: 700; color: #0f172a;">
+                    What You’ll Explore 📚
                 </h3>
-                <ul style="margin: 0; padding-left: 20px; color: #475569; font-size: 14px; line-height: 1.8;">
-                    <li>Artificial Intelligence &amp; AI for Engineering</li>
-                    <li>Machine Learning</li>
-                    <li>IoT &amp; Cybersecurity</li>
-                    <li>Quantum Computing</li>
-                    <li>DSA Roadmap</li>
-                </ul>
-            </div>
-
-            <!-- LEARN CARD -->
-            <div style="background: #f8fafc; border-left: 4px solid #818cf8; border-radius: 8px; padding: 18px 20px; margin: 24px 0;">
-                <h3 style="margin: 0 0 12px; font-size: 16px; font-weight: 700; color: #0f172a;">
-                    What You’ll Learn 📚
-                </h3>
-                <ul style="margin: 0; padding-left: 20px; color: #475569; font-size: 14px; line-height: 1.8;">
+                <ul style="margin: 0; padding-left: 20px; color: #475569; font-size: 14.5px; line-height: 1.9;">
                     <li>Emerging technologies &amp; applications</li>
                     <li>Hands-on technical skills</li>
                     <li>Insights into diverse domains</li>
@@ -121,9 +104,15 @@ const buildEmailHtml = ({ name, isAcmMember, qrDataUrl }) => {
                 We look forward to having you at <strong>Xcelerate-2K26</strong> and making these two days a meaningful and enriching learning experience.
             </p>
 
-            <p style="font-size: 16px; font-weight: 700; color: #1e1b4b; margin: 24px 0 0; text-align: center; padding: 12px; background: #eef2ff; border-radius: 8px;">
-                Your journey starts here. Engage. Explore. Evolve. ✨
-            </p>
+            <!-- INSPIRATIONAL CLOSING -->
+            <div style="margin: 28px 0 0; text-align: center; padding: 18px 22px; background: linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%); border-radius: 12px; border: 1px solid rgba(56, 189, 248, 0.25);">
+                <p style="margin: 0 0 6px; font-size: 16px; font-weight: 800; color: #0f172a; letter-spacing: -0.2px;">
+                    Your journey starts here.
+                </p>
+                <p style="margin: 0; font-size: 14px; font-weight: 600; color: #0284c7; font-style: italic; line-height: 1.5;">
+                    - with ACM by your side, opening the door to new technologies, opportunities, and possibilities. ✨
+                </p>
+            </div>
         </div>
 
         <!-- FOOTER -->

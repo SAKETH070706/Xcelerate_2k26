@@ -82,3 +82,21 @@ export const register = async (req, res, next) => {
         next(error);
     }
 };
+
+/**
+ * Return dynamic payment configuration (Cloudinary QR URLs for ACM & Non-ACM, UPI ID, Payee Name)
+ * Allows hot-swapping Cloudinary QR URLs via Render/backend environment variables anytime.
+ */
+export const getPaymentConfig = (req, res) => {
+    return res.json({
+        success: true,
+        qrAcmUrl: (process.env.PAYMENT_QR_ACM_70_URL || process.env.PAYMENT_QR_70_URL || "").trim(),
+        qrNonAcmUrl: (process.env.PAYMENT_QR_NON_ACM_100_URL || process.env.PAYMENT_QR_100_URL || "").trim(),
+        upiId: (process.env.PAYMENT_UPI_ID || "srkr.acm@upi").trim(),
+        payeeName: (process.env.PAYMENT_PAYEE_NAME || "SRKR ACM Student Chapter").trim(),
+        acmFee: 70,
+        nonAcmFee: 100,
+    });
+};
+
+

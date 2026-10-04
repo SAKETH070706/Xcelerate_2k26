@@ -68,12 +68,6 @@ export const EVENT_DATA = {
             tag: "Full-Day Workshop",
             desc: "Configure IoT devices, analyze network traffic, and practice defensive ethical security.",
         },
-        {
-            id: "quantum",
-            title: "Quantum Computing",
-            tag: "Full-Day Workshop",
-            desc: "Design quantum circuits and execute simulation algorithms using Qiskit.",
-        },
     ],
 
     schedule: [
@@ -155,18 +149,22 @@ export const EVENT_DATA = {
 
     perks: [
         {
+            icon: "📜",
             title: "Official Certificate",
             description: "Issued by SRKR ACM Student Chapter.",
         },
         {
+            icon: "💻",
             title: "Dedicated Domain Lab",
             description: "Full-day practical training exclusively in your selected domain on Day 2.",
         },
         {
+            icon: "📦",
             title: "Curated Resource Kit",
             description: "Source code repositories, slide decks, and reference guides.",
         },
         {
+            icon: "🤝",
             title: "Mentor Support",
             description: "Direct assistance from domain leads during hands-on sessions.",
         },
@@ -175,7 +173,7 @@ export const EVENT_DATA = {
     faqs: [
         {
             q: "How does the Day 2 hands-on workshop work?",
-            a: "Day 2 is not a generic session. Participants choose 1 domain (AI/ML, Software Dev, IoT/Cyber, or Quantum) and spend the entire day in that dedicated hands-on lab.",
+            a: "Day 2 is not a generic session. Participants choose 1 domain (AI/ML, Software Development, or IoT & Cybersecurity) and spend the entire day in that dedicated hands-on lab.",
         },
         {
             q: "Who is eligible to participate?",

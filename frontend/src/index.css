@@ -4713,113 +4713,198 @@ select option {
     margin: 16px 0 10px;
 }
 
-/* Tracks Grid View */
-.tracks-details-grid {
+/* =========================================================
+   COHESIVE EVENT GUIDE TABS DESIGN (TRACKS, PERKS, FAQS)
+   Unified with Schedule Card aesthetics
+========================================================= */
+
+/* Tab Section Headers */
+.tab-section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+
+.tab-section-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    background: #e0f2fe;
+    color: #0284c7;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 1px solid #bae6fd;
+}
+
+.tab-section-tag.tag-day2 {
+    background: #dcfce7;
+    color: #15803d;
+    border-color: #bbf7d0;
+}
+
+.tab-section-tag.tag-perks {
+    background: #fef3c7;
+    color: #b45309;
+    border-color: #fde68a;
+}
+
+.tab-section-tag.tag-faqs {
+    background: #ede9fe;
+    color: #6d28d9;
+    border-color: #ddd6fe;
+}
+
+.tab-section-title {
+    font-size: 15.5px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0;
+}
+
+.tab-section-subtitle {
+    font-size: 12.5px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+/* Tracks Grid & Cards */
+.tracks-tab-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.tracks-list-grid {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
 }
 
 .track-detail-card {
-    background: #f8fafc;
-    border: 1.5px solid #e2e8f0;
-    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
     padding: 16px 18px;
-    transition: all 0.2s;
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .track-detail-card:hover {
     border-color: #38bdf8;
     background: #ffffff;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.08);
+    transform: translateY(-2px);
 }
 
-.track-detail-head {
+.track-card-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 8px;
+    gap: 10px;
     flex-wrap: wrap;
 }
 
-.track-detail-title {
-    font-size: 16px;
-    font-weight: 700;
+.track-card-title {
+    font-size: 15.5px;
+    font-weight: 800;
     color: #0f172a;
-}
-
-.track-tag-pill {
-    padding: 3px 10px;
-    border-radius: 9999px;
-    background: #e0f2fe;
-    color: #0369a1;
-    font-size: 11px;
-    font-weight: 700;
-}
-
-.track-detail-desc {
-    font-size: 13px;
-    color: #475569;
-    line-height: 1.5;
-    margin-bottom: 12px;
-}
-
-.track-topics-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-}
-
-.topic-chip {
-    padding: 4px 10px;
-    border-radius: 6px;
-    background: #ffffff;
-    border: 1px solid #cbd5e1;
-    font-size: 11.5px;
-    font-weight: 600;
-    color: #334155;
-}
-
-/* Perks Grid */
-.perks-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 14px;
-}
-
-.perk-card {
-    padding: 18px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.perk-card-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14.5px;
-    font-weight: 700;
-    color: #0f172a;
-}
-
-.perk-card-title svg {
-    color: #16a34a;
-    flex-shrink: 0;
-}
-
-.perk-card p {
-    font-size: 12.5px;
-    color: #64748b;
-    line-height: 1.45;
     margin: 0;
 }
 
-/* FAQ List */
+.track-badge {
+    padding: 3px 10px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.track-card-desc {
+    font-size: 13px;
+    color: #64748b;
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Perks Grid & Cards */
+.perks-tab-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.perks-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 12px;
+}
+
+.perk-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px 18px;
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.perk-card:hover {
+    border-color: #38bdf8;
+    background: #ffffff;
+    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.08);
+    transform: translateY(-2px);
+}
+
+.perk-icon-wrapper {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border: 1.5px solid #bfdbfe;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.08);
+}
+
+.perk-card-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.perk-title {
+    font-size: 15.5px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0 0 4px;
+}
+
+.perk-desc {
+    font-size: 13px;
+    color: #64748b;
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* FAQs List & Cards */
+.faqs-tab-content {
+    display: flex;
+    flex-direction: column;
+}
+
 .faqs-list {
     display: flex;
     flex-direction: column;
@@ -4827,24 +4912,65 @@ select option {
 }
 
 .faq-card {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 14px;
-    padding: 16px 20px;
+    padding: 16px 18px;
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.faq-card h4 {
-    font-size: 14.5px;
-    font-weight: 700;
-    color: #0f172a;
-    margin-bottom: 6px;
+.faq-card:hover {
+    border-color: #38bdf8;
+    background: #ffffff;
+    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.08);
+    transform: translateY(-2px);
 }
 
-.faq-card p {
+.faq-question-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.faq-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    color: #1e40af;
+    font-weight: 800;
     font-size: 13px;
-    color: #64748b;
-    line-height: 1.5;
+    border: 1.5px solid #bfdbfe;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.06);
+    flex-shrink: 0;
+}
+
+.faq-question {
+    font-size: 15px;
+    font-weight: 800;
+    color: #0f172a;
     margin: 0;
+    line-height: 1.4;
+}
+
+.faq-answer {
+    font-size: 13.5px;
+    color: #475569;
+    line-height: 1.55;
+    margin: 0;
+    padding-left: 36px;
+}
+
+@media (max-width: 600px) {
+    .faq-answer {
+        padding-left: 0;
+        margin-top: 6px;
+    }
 }
 
 /* Modal Popup Variant */

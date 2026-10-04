@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import QRCode from "qrcode";
-import { registerParticipant, checkMemberPhone } from "./services/registrationApi";
+import { registerParticipant, checkMemberPhone, fetchPaymentConfig } from "./services/registrationApi";
 import AsteroidsBackground from "./components/AsteroidsBackground";
 import aceLogo from "./assets/ace-logo.png";
 import { EVENT_DATA } from "./data/eventContent";
@@ -43,8 +43,16 @@ export default function App() {
     const logoClickCountRef = useRef(0);
     const logoClickTimerRef = useRef(null);
 
-    // UPI copy feedback state
-    const [copiedUpi, setCopiedUpi] = useState(false);
+
+    // Dynamic Payment Configuration (fetched from backend / Cloudinary URLs via Render env)
+    const [paymentConfig, setPaymentConfig] = useState({
+        qrAcmUrl: (import.meta.env.VITE_PAYMENT_QR_ACM_70_URL || "").trim(),
+        qrNonAcmUrl: (import.meta.env.VITE_PAYMENT_QR_NON_ACM_100_URL || "").trim(),
+        upiId: "srkr.acm@upi",
+        payeeName: "SRKR ACM Student Chapter",
+        acmFee: 70,
+        nonAcmFee: 100,
+    });
 
     // Dynamic QR Code data URLs
     const [upiQrDataUrl, setUpiQrDataUrl] = useState("");
@@ -127,9 +135,29 @@ export default function App() {
         }, 60);
     };
 
-    // Generate UPI QR Code on mount
+    // Fetch dynamic payment info (Cloudinary QR URLs for ACM ₹70 & Non-ACM ₹100 from backend/Render) on mount
     useEffect(() => {
-        QRCode.toDataURL("upi://pay?pa=srkr.acm@upi&pn=SRKR%20ACM%20Student%20Chapter&cu=INR", {
+        fetchPaymentConfig()
+            .then((info) => {
+                if (info && info.success) {
+                    setPaymentConfig((prev) => ({
+                        qrAcmUrl: info.qrAcmUrl || prev.qrAcmUrl,
+                        qrNonAcmUrl: info.qrNonAcmUrl || prev.qrNonAcmUrl,
+                        upiId: info.upiId || prev.upiId,
+                        payeeName: info.payeeName || prev.payeeName,
+                        acmFee: info.acmFee || 70,
+                        nonAcmFee: info.nonAcmFee || 100,
+                    }));
+                }
+            })
+            .catch((err) => console.warn("Payment config error:", err));
+    }, []);
+
+    // Generate UPI QR Code whenever payment info or membership category changes (used as fallback or primary)
+    useEffect(() => {
+        const activeAmount = formData.isAcmMember ? (paymentConfig.acmFee || 70) : (paymentConfig.nonAcmFee || 100);
+        const upiString = `upi://pay?pa=${paymentConfig.upiId}&pn=${encodeURIComponent(paymentConfig.payeeName)}&am=${activeAmount}&cu=INR&tn=${encodeURIComponent("Xcelerate-2K26 Registration")}`;
+        QRCode.toDataURL(upiString, {
             width: 240,
             margin: 1.5,
             color: {
@@ -139,7 +167,7 @@ export default function App() {
         })
             .then(setUpiQrDataUrl)
             .catch((err) => console.error("UPI QR Error:", err));
-    }, []);
+    }, [formData.isAcmMember, paymentConfig.upiId, paymentConfig.payeeName, paymentConfig.acmFee, paymentConfig.nonAcmFee]);
 
     // Generate Attendance Pass QR Code when token is present
     useEffect(() => {
@@ -276,11 +304,6 @@ export default function App() {
         setError("");
     };
 
-    const copyUpiId = () => {
-        navigator.clipboard?.writeText("srkr.acm@upi").catch(() => {});
-        setCopiedUpi(true);
-        setTimeout(() => setCopiedUpi(false), 2500);
-    };
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -775,28 +798,36 @@ export default function App() {
 
             {activeEventTab === "tracks" && (
                 <div className="tracks-tab-content">
-                    <h4 style={{ fontSize: "15px", fontWeight: "700", marginBottom: "12px", color: "#0f172a" }}>
-                        Day 1 Core Theory Tracks
-                    </h4>
+                    <div className="tab-section-header">
+                        <span className="tab-section-tag">Day 1</span>
+                        <h4 className="tab-section-title">Core Theory Curriculum</h4>
+                        <span className="tab-section-subtitle">&bull; Morning &amp; Afternoon foundation sessions for all participants</span>
+                    </div>
                     <div className="tracks-list-grid">
                         {(EVENT_DATA.tracks || []).map((t) => (
                             <div key={t.id} className="track-detail-card">
-                                <div className="track-badge">{t.tag}</div>
-                                <h4>{t.name}</h4>
-                                <p>{t.summary}</p>
+                                <div className="track-card-header">
+                                    <h4 className="track-card-title">{t.name}</h4>
+                                    <span className="track-badge pill-theory">{t.tag}</span>
+                                </div>
+                                <p className="track-card-desc">{t.summary}</p>
                             </div>
                         ))}
                     </div>
 
-                    <h4 style={{ fontSize: "15px", fontWeight: "700", margin: "24px 0 12px", color: "#0f172a" }}>
-                        Day 2 Hands-on Domains (Choose 1)
-                    </h4>
+                    <div className="tab-section-header" style={{ marginTop: "28px" }}>
+                        <span className="tab-section-tag tag-day2">Day 2</span>
+                        <h4 className="tab-section-title">Hands-on Workshop Domains</h4>
+                        <span className="tab-section-subtitle">&bull; Intensive all-day practical lab (Select 1 domain)</span>
+                    </div>
                     <div className="tracks-list-grid">
                         {(EVENT_DATA.day2Domains || []).map((d) => (
                             <div key={d.id} className="track-detail-card">
-                                <div className="track-badge">{d.tag}</div>
-                                <h4>{d.title}</h4>
-                                <p>{d.desc}</p>
+                                <div className="track-card-header">
+                                    <h4 className="track-card-title">{d.title}</h4>
+                                    <span className="track-badge pill-lab">{d.tag}</span>
+                                </div>
+                                <p className="track-card-desc">{d.desc}</p>
                             </div>
                         ))}
                     </div>
@@ -804,24 +835,46 @@ export default function App() {
             )}
 
             {activeEventTab === "perks" && (
-                <div className="perks-grid">
-                    {(EVENT_DATA.perks || []).map((perk, pIdx) => (
-                        <div key={pIdx} className="perk-card">
-                            <div className="perk-title">{perk.title}</div>
-                            <p>{perk.description}</p>
-                        </div>
-                    ))}
+                <div className="perks-tab-content">
+                    <div className="tab-section-header">
+                        <span className="tab-section-tag tag-perks">Deliverables</span>
+                        <h4 className="tab-section-title">Participant Benefits &amp; Perks</h4>
+                        <span className="tab-section-subtitle">&bull; Included for every registered attendee</span>
+                    </div>
+                    <div className="perks-grid">
+                        {(EVENT_DATA.perks || []).map((perk, pIdx) => (
+                            <div key={pIdx} className="perk-card">
+                                <div className="perk-icon-wrapper">
+                                    {perk.icon || "✨"}
+                                </div>
+                                <div className="perk-card-content">
+                                    <h4 className="perk-title">{perk.title}</h4>
+                                    <p className="perk-desc">{perk.description}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
 
             {activeEventTab === "faqs" && (
-                <div className="faqs-list">
-                    {(EVENT_DATA.faqs || []).map((faq, fIdx) => (
-                        <div key={fIdx} className="faq-card">
-                            <h4>{faq.q}</h4>
-                            <p>{faq.a}</p>
-                        </div>
-                    ))}
+                <div className="faqs-tab-content">
+                    <div className="tab-section-header">
+                        <span className="tab-section-tag tag-faqs">Questions</span>
+                        <h4 className="tab-section-title">Frequently Asked Questions</h4>
+                        <span className="tab-section-subtitle">&bull; Important guidelines and event details</span>
+                    </div>
+                    <div className="faqs-list">
+                        {(EVENT_DATA.faqs || []).map((faq, fIdx) => (
+                            <div key={fIdx} className="faq-card">
+                                <div className="faq-question-row">
+                                    <span className="faq-badge">Q</span>
+                                    <h4 className="faq-question">{faq.q}</h4>
+                                </div>
+                                <p className="faq-answer">{faq.a}</p>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
         </>
@@ -1229,16 +1282,39 @@ export default function App() {
                                     </div>
                                 </div>
 
-                                <div style={{ marginTop: "24px" }}>
-                                    <button
-                                        type="button"
-                                        className="register-another-btn"
-                                        onClick={handleRegisterAnother}
-                                    >
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                                        Register Another Attendee
-                                    </button>
+                                {/* DEVICE REGISTRATION LOCK NOTICE */}
+                                <div style={{
+                                    marginTop: "20px",
+                                    padding: "16px 18px",
+                                    background: "#f8fafc",
+                                    border: "1.5px solid #e2e8f0",
+                                    borderRadius: "14px",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "12px",
+                                    textAlign: "left"
+                                }}>
+                                    <div style={{ fontSize: "22px", flexShrink: 0 }}>🔒</div>
+                                    <div style={{ fontSize: "13px", color: "#64748b", lineHeight: "1.45" }}>
+                                        <strong style={{ color: "#0f172a", display: "block", marginBottom: "3px" }}>
+                                            Device Registration Completed
+                                        </strong>
+                                        This device is registered for <strong>{existingSubmission.name}</strong> ({existingSubmission.registrationNumber}). Each participant must register from their own personal device to ensure valid QR verification.
+                                    </div>
                                 </div>
+
+                                {isOfflineDesk && (
+                                    <div style={{ marginTop: "20px" }}>
+                                        <button
+                                            type="button"
+                                            className="register-another-btn"
+                                            onClick={handleRegisterAnother}
+                                        >
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                            [Admin Desk] Register Another Attendee
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         ) : (
                             <>
@@ -1690,6 +1766,13 @@ export default function App() {
                                                 </span>
                                             </div>
                                             <div className="summary-row">
+                                                <span className="summary-label">Registration Fee</span>
+                                                <span className="summary-val" style={{ color: "#0f172a", fontWeight: "800", fontSize: "15px" }}>
+                                                    ₹{formData.isAcmMember ? (paymentConfig.acmFee || 70) : (paymentConfig.nonAcmFee || 100)}{" "}
+                                                    {formData.isAcmMember && <span style={{ color: "#16a34a", fontSize: "12px", fontWeight: "700" }}>(₹30 Discount Applied)</span>}
+                                                </span>
+                                            </div>
+                                            <div className="summary-row">
                                                 <span className="summary-label">Payment Mode</span>
                                                 <span className="summary-val" style={{ color: "#16a34a", fontWeight: "700" }}>
                                                     {isOfflineDesk ? "Offline Desk (Cash Collected)" : "Online (UPI)"}
@@ -1707,28 +1790,52 @@ export default function App() {
                                                         Google Pay &bull; PhonePe &bull; Paytm &bull; BHIM
                                                     </p>
 
+                                                    {/* FEE AMOUNT HIGHLIGHT BANNER */}
+                                                    <div style={{
+                                                        background: formData.isAcmMember
+                                                            ? "linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(5, 150, 105, 0.12))"
+                                                            : "linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(29, 78, 216, 0.12))",
+                                                        border: `1.5px solid ${formData.isAcmMember ? "#86efac" : "#bfdbfe"}`,
+                                                        borderRadius: "14px",
+                                                        padding: "12px 16px",
+                                                        margin: "12px auto 16px",
+                                                        maxWidth: "340px",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent: "space-between",
+                                                        gap: "10px"
+                                                    }}>
+                                                        <div style={{ textAlign: "left" }}>
+                                                            <div style={{ fontSize: "11px", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.5px", color: formData.isAcmMember ? "#15803d" : "#1d4ed8" }}>
+                                                                {formData.isAcmMember ? "🌟 ACM Member Fee" : "Standard Registration"}
+                                                            </div>
+                                                            <div style={{ fontSize: "12px", color: "#64748b" }}>
+                                                                {formData.isAcmMember ? "Special discount applied" : "2-day technical symposium"}
+                                                            </div>
+                                                        </div>
+                                                        <div style={{ fontSize: "22px", fontWeight: "900", color: formData.isAcmMember ? "#15803d" : "#1e40af" }}>
+                                                            ₹{formData.isAcmMember ? (paymentConfig.acmFee || 70) : (paymentConfig.nonAcmFee || 100)}
+                                                        </div>
+                                                    </div>
+
                                                     <div className="upi-qr-display-box">
-                                                        {upiQrDataUrl ? (
+                                                        {(formData.isAcmMember ? paymentConfig.qrAcmUrl : paymentConfig.qrNonAcmUrl) ? (
+                                                             <img
+                                                                 src={formData.isAcmMember ? paymentConfig.qrAcmUrl : paymentConfig.qrNonAcmUrl}
+                                                                 alt="UPI Payment QR Code"
+                                                                 className="upi-qr-img"
+                                                                 style={{ objectFit: "contain", borderRadius: "12px" }}
+                                                             />
+                                                         ) : upiQrDataUrl ? (
                                                             <img src={upiQrDataUrl} alt="UPI QR Code" className="upi-qr-img" />
                                                         ) : (
                                                             <div className="upi-qr-placeholder">Generating UPI QR...</div>
                                                         )}
-                                                        <div className="upi-qr-badge">SRKR ACM UPI</div>
-                                                    </div>
-
-                                                    <div className="upi-copy-container">
-                                                        <span className="upi-id-text">srkr.acm@upi</span>
-                                                        <button
-                                                            type="button"
-                                                            className="copy-upi-btn"
-                                                            onClick={copyUpiId}
-                                                        >
-                                                            {copiedUpi ? "Copied! ✓" : "Copy UPI ID"}
-                                                        </button>
+                                                        <div className="upi-qr-badge">Pay ₹{formData.isAcmMember ? (paymentConfig.acmFee || 70) : (paymentConfig.nonAcmFee || 100)} via UPI</div>
                                                     </div>
 
                                                     <p className="upi-note">
-                                                        Pay fee via UPI, copy the 12-digit UTR ID, and upload screenshot below.
+                                                        Scan &amp; pay <strong>₹{formData.isAcmMember ? (paymentConfig.acmFee || 70) : (paymentConfig.nonAcmFee || 100)}</strong> via any UPI app, copy the 12-digit UTR ID, and upload screenshot below.
                                                     </p>
                                                 </div>
 
