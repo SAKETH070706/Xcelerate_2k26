@@ -106,7 +106,14 @@ export const registerUser = async (data) => {
             }) || await db.collection("events").findOne({});
 
             if (activeEvent) {
-                const sessions = (activeEvent.checkIn?.sessions || []).map((s) => ({
+                const eventSessions = (activeEvent.checkIn?.sessions && activeEvent.checkIn.sessions.length > 0)
+                    ? activeEvent.checkIn.sessions
+                    : [
+                        { sessionId: "xcel-day-1", date: "2026-10-05", name: "Day 1 - Foundations & Architecture Deep-Dive" },
+                        { sessionId: "xcel-day-2", date: "2026-10-06", name: "Day 2 - Hands-on Lab & Hackathon Showcase" },
+                    ];
+
+                const sessions = eventSessions.map((s) => ({
                     sessionId: s.sessionId,
                     date: s.date,
                     sessionName: s.name || s.sessionName || "General Session",

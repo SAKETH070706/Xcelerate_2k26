@@ -139,7 +139,10 @@ const renderPage = ({ valid, participant, query }) => `
 
 export const verifyCertificate = async (req, res) => {
     try {
-        const query = (req.params.aceId || req.params.token || req.query.token || "").trim();
+        let query = (req.params.aceId || req.params.token || req.query.token || "").trim();
+        if (query.includes("/verify/")) {
+            query = query.split("/verify/")[1].split("?")[0].split("/")[0].trim();
+        }
 
         if (!query) {
             return res.status(400).send(renderPage({ valid: false, query: "None provided" }));
@@ -202,7 +205,7 @@ export const verifyCertificate = async (req, res) => {
  */
 export const markAttendance = async (req, res) => {
     try {
-        const { token, adminPasscode, scannedBy = "EBM Desk" } = req.body;
+        let { token, adminPasscode, scannedBy = "EBM Desk" } = req.body;
 
         if (adminPasscode !== "admin123") {
             return res.status(403).json({
@@ -218,10 +221,15 @@ export const markAttendance = async (req, res) => {
             });
         }
 
+        token = String(token).trim();
+        if (token.includes("/verify/")) {
+            token = token.split("/verify/")[1].split("?")[0].split("/")[0].trim();
+        }
+
         const participant = await Registration.findOne({
             $or: [
-                { qrToken: token.trim() },
-                { registrationNumber: token.trim().toUpperCase() },
+                { qrToken: token },
+                { registrationNumber: token.toUpperCase() },
             ],
         });
 
@@ -251,6 +259,32 @@ export const markAttendance = async (req, res) => {
         participant.attendanceMarkedAt = new Date();
         participant.attendanceMarkedBy = scannedBy;
         await participant.save();
+
+        // Also update 'checkins' collection in MongoDB for sync
+        try {
+            const db = mongoose.connection.db;
+            if (db) {
+                await db.collection("checkins").updateOne(
+                    {
+                        $or: [
+                            { qrToken: participant.qrToken },
+                            { participantId: participant.registrationNumber },
+                        ],
+                    },
+                    {
+                        $set: {
+                            "sessions.0.checkedIn": true,
+                            "sessions.0.checkedInAt": new Date(),
+                            attendedSessions: 1,
+                            attendancePercentage: 50,
+                            updatedAt: new Date(),
+                        },
+                    }
+                );
+            }
+        } catch (syncErr) {
+            console.warn("Checkins attendance sync notice:", syncErr.message);
+        }
 
         return res.json({
             success: true,
