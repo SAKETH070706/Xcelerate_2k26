@@ -158,6 +158,36 @@ export const registerUser = async (data) => {
         console.warn("⚠️ Attendance check-in sync skipped:", syncError.message);
     }
 
+    // 6c. If attendee is an ACM member, directly update their member record in xcelerate_2026_batch collection
+    if (isAcmMember) {
+        try {
+            const db = mongoose.connection.db;
+            if (db) {
+                const batchCol = db.collection("xcelerate_2026_batch");
+                const query = aceId
+                    ? { $or: [{ aceId }, { phone: whatsappNumber }] }
+                    : { phone: whatsappNumber };
+
+                const updateDoc = {
+                    $set: {
+                        name,
+                        email,
+                        phone: whatsappNumber,
+                        branch,
+                        registrationNumber,
+                        section,
+                        updatedAt: new Date(),
+                    },
+                };
+
+                const updateResult = await batchCol.updateOne(query, updateDoc);
+                console.log(`✅ Directly updated xcelerate_2026_batch member record: matched ${updateResult.matchedCount}, modified ${updateResult.modifiedCount}`);
+            }
+        } catch (batchErr) {
+            console.error("⚠️ Failed to update xcelerate_2026_batch member record:", batchErr.message);
+        }
+    }
+
     // 7. Send confirmation email via Brevo with QR attendance pass
     try {
         const sent = await sendRegistrationEmailWithRetry({

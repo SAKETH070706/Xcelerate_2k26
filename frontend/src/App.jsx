@@ -309,6 +309,18 @@ export default function App() {
         const { name, value, type, checked } = e.target;
         if (type === "checkbox") {
             setFormData((prev) => ({ ...prev, [name]: checked }));
+        } else if (name === "email") {
+            // Automatically sanitize username: strip @gmail.com, @..., or trailing gmail.com so user can type/paste freely
+            let val = value.trim().toLowerCase();
+            if (val.includes("@gmail.com")) {
+                val = val.replace(/@gmail\.com/gi, "");
+            } else if (val.includes("@")) {
+                val = val.replace(/@.*$/, "");
+            }
+            if (val.endsWith("gmail.com") && val.length > 9) {
+                val = val.slice(0, -9);
+            }
+            setFormData((prev) => ({ ...prev, email: val }));
         } else {
             setFormData((prev) => ({ ...prev, [name]: value }));
         }
@@ -393,9 +405,13 @@ export default function App() {
                 if (res.isMember && res.member) {
                     const mem = res.member;
                     setVerifiedMember(mem);
-                    const emailUser = (mem.email || "").replace(/@.*$/, "").trim().toLowerCase();
+                    let emailUser = (mem.email || "").trim().toLowerCase();
+                    emailUser = emailUser.replace(/@gmail\.com/gi, "").replace(/@.*$/, "");
+                    if (emailUser.endsWith("gmail.com") && emailUser.length > 9) {
+                        emailUser = emailUser.slice(0, -9);
+                    }
 
-                    // Autofill verified member fields
+                    // Autofill verified member fields (attendee is free to edit/update any field)
                     setFormData((prev) => ({
                         ...prev,
                         name: mem.name || "",
@@ -403,6 +419,7 @@ export default function App() {
                         branch: mem.branch || "",
                         aceId: mem.aceId || "",
                         whatsappNumber: cleanPhone,
+                        isAcmMember: true,
                     }));
                     setCurrentStep(2);
                     scrollToForm();
@@ -428,46 +445,37 @@ export default function App() {
     const handleNextFromPhase2 = () => {
         setError("");
 
-        if (formData.isAcmMember) {
-            if (!formData.name.trim()) {
-                setError("Full Name is missing. Please go back and verify your WhatsApp number.");
-                return;
-            }
-            if (!formData.registrationNumber.trim()) {
-                setError("Please enter your College Registration Number (Roll No).");
-                return;
-            }
-            if (!formData.section) {
-                setError("Please select your section.");
-                return;
-            }
-        } else {
-            if (!formData.name.trim()) {
-                setError("Please enter your full name.");
-                return;
-            }
-            const rawEmail = formData.email.trim();
-            if (!rawEmail) {
-                setError("Please enter your Gmail username.");
-                return;
-            }
-            if (!formData.registrationNumber.trim()) {
-                setError("Please enter your College Registration Number.");
-                return;
-            }
-            const cleanPhone = formData.whatsappNumber.replace(/\D/g, "");
-            if (cleanPhone.length !== 10) {
-                setError("WhatsApp Number must be exactly 10 digits.");
-                return;
-            }
-            if (!formData.branch) {
-                setError("Please select your branch.");
-                return;
-            }
-            if (!formData.section) {
-                setError("Please select your section.");
-                return;
-            }
+        if (!formData.name.trim()) {
+            setError("Please enter your full name.");
+            return;
+        }
+        let rawEmail = formData.email.trim().toLowerCase();
+        rawEmail = rawEmail.replace(/@gmail\.com/gi, "").replace(/@.*$/, "");
+        if (rawEmail.endsWith("gmail.com") && rawEmail.length > 9) {
+            rawEmail = rawEmail.slice(0, -9);
+        }
+        rawEmail = rawEmail.trim();
+
+        if (!rawEmail) {
+            setError("Please enter your Gmail username / address.");
+            return;
+        }
+        if (!formData.registrationNumber.trim()) {
+            setError("Please enter your College Registration Number (Roll No).");
+            return;
+        }
+        const cleanPhone = formData.whatsappNumber.replace(/\D/g, "");
+        if (cleanPhone.length !== 10) {
+            setError("WhatsApp Number must be exactly 10 digits.");
+            return;
+        }
+        if (!formData.branch) {
+            setError("Please select your branch.");
+            return;
+        }
+        if (!formData.section) {
+            setError("Please select your section.");
+            return;
         }
 
         setCurrentStep(3);
@@ -579,7 +587,13 @@ export default function App() {
         setLoading(true);
 
         try {
-            const emailUsername = formData.email.trim().toLowerCase().replace(/@.*$/, "");
+            let emailUsername = formData.email.trim().toLowerCase();
+            emailUsername = emailUsername.replace(/@gmail\.com/gi, "").replace(/@.*$/, "");
+            if (emailUsername.endsWith("gmail.com") && emailUsername.length > 9) {
+                emailUsername = emailUsername.slice(0, -9);
+            }
+            emailUsername = emailUsername.trim();
+
             const fullEmail = `${emailUsername}@gmail.com`;
 
             const payload = {
@@ -1184,11 +1198,6 @@ export default function App() {
                             View Event Guide &amp; Schedule &darr;
                         </button>
                     </div>
-
-                    <div className="hero-scroll-cue">
-                        <span>Register Below (Phase 1 of 3)</span>
-                        <svg className="cue-arrow-down" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                    </div>
                 </section>
 
                 {/* PROGRESSIVE FORM CONTAINER */}
@@ -1495,208 +1504,181 @@ export default function App() {
                                         <div className="step-header-box">
                                             <span className="step-header-tag">Phase 02 of 03</span>
                                             <h3 className="step-header-title">
-                                                {formData.isAcmMember ? "Verified Member Details" : "Student Registration Details"}
+                                                {formData.isAcmMember ? "ACM Member Details" : "Student Registration Details"}
                                             </h3>
                                             <p className="step-header-desc">
                                                 {formData.isAcmMember
-                                                    ? "Your ACM profile is verified. Fill in your college roll number and section to proceed."
+                                                    ? "Your ACM profile is verified. All details are pre-filled below and can be edited (e.g. if your email has changed). Enter your roll number and section to proceed."
                                                     : "Enter your academic and contact details for event registration."}
                                             </p>
                                         </div>
 
-                                        {/* IF ACM MEMBER: SLEEK READ-ONLY VERIFIED CARD + ONLY REMAINING DETAILS */}
-                                        {formData.isAcmMember ? (
-                                            <>
-                                                <div className="verified-member-card">
-                                                    <div className="verified-card-header">
-                                                        <div className="verified-pill">
-                                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                                            Verified ACM Member
-                                                        </div>
+                                        {/* VERIFIED ACM MEMBER STATUS BANNER */}
+                                        {formData.isAcmMember && (
+                                            <div className="acm-verified-banner" style={{
+                                                background: "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)",
+                                                border: "1.5px solid #86efac",
+                                                borderRadius: "14px",
+                                                padding: "14px 18px",
+                                                marginBottom: "20px",
+                                                display: "flex",
+                                                alignItems: "flex-start",
+                                                gap: "12px",
+                                                boxShadow: "0 2px 8px rgba(22, 163, 74, 0.08)"
+                                            }}>
+                                                <span style={{ fontSize: "24px", lineHeight: "1" }}>🌟</span>
+                                                <div style={{ flex: 1 }}>
+                                                    <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginBottom: "4px" }}>
+                                                        <strong style={{ color: "#166534", fontSize: "14px" }}>Verified ACM Member Profile</strong>
+                                                        {formData.aceId && (
+                                                            <span style={{
+                                                                background: "#166534",
+                                                                color: "#ffffff",
+                                                                fontSize: "11px",
+                                                                fontWeight: "700",
+                                                                padding: "2px 8px",
+                                                                borderRadius: "9999px",
+                                                                fontFamily: "monospace"
+                                                            }}>
+                                                                {formData.aceId}
+                                                            </span>
+                                                        )}
                                                     </div>
-                                                    <div className="verified-info-grid">
-                                                        <div className="verified-info-item">
-                                                            <span className="info-label">Full Name</span>
-                                                            <span className="info-value">{formData.name}</span>
-                                                        </div>
-                                                        <div className="verified-info-item">
-                                                            <span className="info-label">Gmail</span>
-                                                            <span className="info-value">{formData.email}@gmail.com</span>
-                                                        </div>
-                                                        <div className="verified-info-item">
-                                                            <span className="info-label">Branch</span>
-                                                            <span className="info-value">{formData.branch}</span>
-                                                        </div>
-                                                        <div className="verified-info-item">
-                                                            <span className="info-label">WhatsApp</span>
-                                                            <span className="info-value">{formData.whatsappNumber}</span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="verified-card-footer">
-                                                        🔒 Verified from ACM 2025 Directory
-                                                    </div>
+                                                    <p style={{ color: "#15803d", fontSize: "12.5px", margin: "0", lineHeight: "1.45" }}>
+                                                        Default details loaded from ACM records. <strong>All fields below are editable</strong> — you can update your Email, Phone Number, or Name if your records need to be updated.
+                                                    </p>
                                                 </div>
-
-                                                <div className="remaining-fields-notice">
-                                                    <strong>Please provide your college roll number and section:</strong>
-                                                </div>
-
-                                                <div className="grid-2-col">
-                                                    {/* COLLEGE ROLL NO */}
-                                                    <div className="field">
-                                                        <label>
-                                                            <svg className="field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="16" rx="2"></rect><line x1="7" y1="8" x2="17" y2="8"></line><line x1="7" y1="12" x2="17" y2="12"></line><line x1="7" y1="16" x2="13" y2="16"></line></svg>
-                                                            College Roll Number (Reg No) <span className="req-star">*</span>
-                                                        </label>
-                                                        <input
-                                                            type="text"
-                                                            name="registrationNumber"
-                                                            value={formData.registrationNumber}
-                                                            onChange={handleChange}
-                                                            placeholder="e.g. 24B91A05XX"
-                                                            style={{ textTransform: "uppercase" }}
-                                                            required
-                                                        />
-                                                    </div>
-
-                                                    {/* SECTION */}
-                                                    <div className="field">
-                                                        <label>
-                                                            <svg className="field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
-                                                            Section <span className="req-star">*</span>
-                                                        </label>
-                                                        <select
-                                                            name="section"
-                                                            value={formData.section}
-                                                            onChange={handleChange}
-                                                            required
-                                                        >
-                                                            <option value="">Select Section</option>
-                                                            {SECTION_OPTIONS.map((sec) => (
-                                                                <option key={sec} value={sec}>
-                                                                    Section {sec}
-                                                                </option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
-                                                </div>
-                                            </>
-                                        ) : (
-                                            /* NON-MEMBER: MANUAL INPUTS */
-                                            <>
-                                                <div className="field">
-                                                    <label>
-                                                        <svg className="field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                                                        Full Name <span className="req-star">*</span>
-                                                    </label>
-                                                    <input
-                                                        type="text"
-                                                        name="name"
-                                                        value={formData.name}
-                                                        onChange={handleChange}
-                                                        placeholder="e.g. Gopala Krishna Saketh"
-                                                        required
-                                                    />
-                                                </div>
-
-                                                <div className="field">
-                                                    <label>
-                                                        <svg className="field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-                                                        Gmail Address <span className="req-star">*</span>
-                                                    </label>
-                                                    <div className="email-input-wrapper">
-                                                        <input
-                                                            type="text"
-                                                            name="email"
-                                                            value={formData.email}
-                                                            onChange={handleChange}
-                                                            placeholder="Enter Gmail username"
-                                                            required
-                                                        />
-                                                        <span className="gmail-suffix">@gmail.com</span>
-                                                    </div>
-                                                </div>
-
-                                                <div className="field">
-                                                    <label>
-                                                        <svg className="field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-                                                        WhatsApp Number <span className="req-star">*</span>
-                                                    </label>
-                                                    <input
-                                                        type="tel"
-                                                        name="whatsappNumber"
-                                                        value={formData.whatsappNumber}
-                                                        onChange={(e) => {
-                                                            const val = e.target.value.replace(/\D/g, "").slice(0, 10);
-                                                            setFormData((prev) => ({ ...prev, whatsappNumber: val }));
-                                                            if (error) setError("");
-                                                        }}
-                                                        placeholder="10-digit mobile number"
-                                                        pattern="[0-9]{10}"
-                                                        maxLength="10"
-                                                        required
-                                                    />
-                                                </div>
-
-                                                <div className="grid-2-col">
-                                                    <div className="field">
-                                                        <label>
-                                                            <svg className="field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="16" rx="2"></rect><line x1="7" y1="8" x2="17" y2="8"></line><line x1="7" y1="12" x2="17" y2="12"></line><line x1="7" y1="16" x2="13" y2="16"></line></svg>
-                                                            College Roll Number <span className="req-star">*</span>
-                                                        </label>
-                                                        <input
-                                                            type="text"
-                                                            name="registrationNumber"
-                                                            value={formData.registrationNumber}
-                                                            onChange={handleChange}
-                                                            placeholder="e.g. 24B91A05XX"
-                                                            style={{ textTransform: "uppercase" }}
-                                                            required
-                                                        />
-                                                    </div>
-
-                                                    <div className="field">
-                                                        <label>
-                                                            <svg className="field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
-                                                            Section <span className="req-star">*</span>
-                                                        </label>
-                                                        <select
-                                                            name="section"
-                                                            value={formData.section}
-                                                            onChange={handleChange}
-                                                            required
-                                                        >
-                                                            <option value="">Select Section</option>
-                                                            {SECTION_OPTIONS.map((sec) => (
-                                                                <option key={sec} value={sec}>
-                                                                    Section {sec}
-                                                                </option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
-                                                </div>
-
-                                                <div className="field">
-                                                    <label>
-                                                        <svg className="field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path></svg>
-                                                        Branch <span className="req-star">*</span>
-                                                    </label>
-                                                    <select
-                                                        name="branch"
-                                                        value={formData.branch}
-                                                        onChange={handleChange}
-                                                        required
-                                                    >
-                                                        <option value="">Select Branch</option>
-                                                        {BRANCH_OPTIONS.map((branch) => (
-                                                            <option key={branch} value={branch}>
-                                                                {branch}
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                </div>
-                                            </>
+                                            </div>
                                         )}
+
+                                        {/* FULL NAME */}
+                                        <div className="field">
+                                            <label>
+                                                <svg className="field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                                                Full Name <span className="req-star">*</span>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                name="name"
+                                                value={formData.name}
+                                                onChange={handleChange}
+                                                placeholder="e.g. Gopala Krishna Saketh"
+                                                required
+                                            />
+                                        </div>
+
+                                        {/* GMAIL ADDRESS */}
+                                        <div className="field">
+                                            <label>
+                                                <svg className="field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                                                Gmail Address <span className="req-star">*</span>
+                                            </label>
+                                            <div className="email-input-wrapper">
+                                                <input
+                                                    type="text"
+                                                    name="email"
+                                                    value={formData.email}
+                                                    onChange={handleChange}
+                                                    placeholder="Enter Gmail username"
+                                                    required
+                                                />
+                                                <span className="gmail-suffix">@gmail.com</span>
+                                            </div>
+                                            <div className="email-note-box" style={{
+                                                marginTop: "8px",
+                                                padding: "8px 12px",
+                                                background: "#eff6ff",
+                                                border: "1px solid #bfdbfe",
+                                                borderRadius: "8px",
+                                                fontSize: "12px",
+                                                color: "#1e40af",
+                                                lineHeight: "1.45"
+                                            }}>
+                                                💡 <strong>Note:</strong> Enter username only (e.g. <code>john.doe</code>). Please <strong>do not type @gmail.com</strong> — it is added automatically. (Even if entered by mistake, it will be accepted automatically).
+                                            </div>
+                                        </div>
+
+                                        {/* WHATSAPP NUMBER */}
+                                        <div className="field">
+                                            <label>
+                                                <svg className="field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                                                WhatsApp Number <span className="req-star">*</span>
+                                            </label>
+                                            <input
+                                                type="tel"
+                                                name="whatsappNumber"
+                                                value={formData.whatsappNumber}
+                                                onChange={(e) => {
+                                                    const val = e.target.value.replace(/\D/g, "").slice(0, 10);
+                                                    setFormData((prev) => ({ ...prev, whatsappNumber: val }));
+                                                    if (error) setError("");
+                                                }}
+                                                placeholder="10-digit mobile number"
+                                                pattern="[0-9]{10}"
+                                                maxLength="10"
+                                                required
+                                            />
+                                        </div>
+
+                                        {/* ROLL NO & SECTION */}
+                                        <div className="grid-2-col">
+                                            <div className="field">
+                                                <label>
+                                                    <svg className="field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="16" rx="2"></rect><line x1="7" y1="8" x2="17" y2="8"></line><line x1="7" y1="12" x2="17" y2="12"></line><line x1="7" y1="16" x2="13" y2="16"></line></svg>
+                                                    College Roll Number <span className="req-star">*</span>
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    name="registrationNumber"
+                                                    value={formData.registrationNumber}
+                                                    onChange={handleChange}
+                                                    placeholder="e.g. 24B91A05XX"
+                                                    style={{ textTransform: "uppercase" }}
+                                                    required
+                                                />
+                                            </div>
+
+                                            <div className="field">
+                                                <label>
+                                                    <svg className="field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+                                                    Section <span className="req-star">*</span>
+                                                </label>
+                                                <select
+                                                    name="section"
+                                                    value={formData.section}
+                                                    onChange={handleChange}
+                                                    required
+                                                >
+                                                    <option value="">Select Section</option>
+                                                    {SECTION_OPTIONS.map((sec) => (
+                                                        <option key={sec} value={sec}>
+                                                            Section {sec}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        {/* BRANCH */}
+                                        <div className="field">
+                                            <label>
+                                                <svg className="field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path></svg>
+                                                Branch <span className="req-star">*</span>
+                                            </label>
+                                            <select
+                                                name="branch"
+                                                value={formData.branch}
+                                                onChange={handleChange}
+                                                required
+                                            >
+                                                <option value="">Select Branch</option>
+                                                {BRANCH_OPTIONS.map((branch) => (
+                                                    <option key={branch} value={branch}>
+                                                        {branch}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
 
                                         {/* ERROR NOTIFICATION */}
                                         {error && (

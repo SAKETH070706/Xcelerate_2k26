@@ -87,17 +87,17 @@ export const EVENT_DATA = {
                     description: "Prompt engineering, generative models, and engineering applications.",
                 },
                 {
-                    time: "11:15 AM - 12:45 PM",
+                    time: "11:15 AM - 12:00 PM",
                     title: "Theory: AIML Foundations",
                     description: "Core algorithms, neural networks, and model training workflows.",
                 },
                 {
-                    time: "12:45 PM - 01:45 PM",
+                    time: "12:00 PM - 01:30 PM",
                     title: "Lunch Break",
                     description: "Mid-day break and networking.",
                 },
                 {
-                    time: "01:45 PM - 02:45 PM",
+                    time: "01:30 PM - 02:45 PM",
                     title: "Theory: IoT & Cybersecurity",
                     description: "Smart sensor ecosystems and defensive cybersecurity principles.",
                 },
@@ -124,17 +124,17 @@ export const EVENT_DATA = {
                     description: "Setup and entry into your selected domain workshop lab.",
                 },
                 {
-                    time: "09:30 AM - 12:45 PM",
+                    time: "09:30 AM - 12:00 PM",
                     title: "Hands-on Lab: Session 1",
                     description: "Hands-on implementation and project setup in your chosen domain.",
                 },
                 {
-                    time: "12:45 PM - 01:45 PM",
+                    time: "12:00 PM - 01:30 PM",
                     title: "Lunch Break",
                     description: "Mid-day refreshment break.",
                 },
                 {
-                    time: "01:45 PM - 03:45 PM",
+                    time: "01:30 PM - 03:45 PM",
                     title: "Hands-on Lab: Session 2",
                     description: "Advanced exercises, project building, testing, and completion.",
                 },

@@ -159,7 +159,7 @@ export const sendRegistrationEmail = async ({
 
     if (qrToken) {
         // Universal verification URL for camera scanning + EBM attendance verification
-        const appBase = (process.env.APP_URL || "https://xcelerate-2k26.vercel.app").replace(/\/+$/, "");
+        const appBase = (process.env.APP_URL || "https://srkracm-xcelerate.vercel.app").replace(/\/+$/, "");
         const verifyUrl = `${appBase}/verify/${qrToken}`;
 
         qrDataUrl = await generateQrDataUrl(verifyUrl);
