@@ -56,64 +56,83 @@ const buildEmailHtml = ({ name, isAcmMember, qrDataUrl }) => {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Xcelerate-2K26 Registration Successful</title>
 </head>
-<body style="margin: 0; padding: 24px 16px; background-color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b;">
-    <div style="max-width: 600px; margin: 0 auto; font-size: 15px; line-height: 1.7;">
-        
-        <!-- HEADER BANNER IMAGE -->
-        <div style="margin: 0 0 24px; text-align: center;">
-            <img 
-                src="${bannerUrl}" 
-                alt="Xcelerate-2K26 • SRKR ACM Student Chapter" 
-                width="600" 
-                style="width: 100%; max-width: 600px; height: auto; display: block; border-radius: 12px; margin: 0 auto;"
-            />
-        </div>
+<body style="margin: 0; padding: 24px 12px; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; -webkit-font-smoothing: antialiased;">
+    <!-- CENTER WRAPPER -->
+    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="width: 100%; margin: 0; padding: 0;">
+        <tr>
+            <td align="center" style="padding: 6px 0 24px;">
+                
+                <!-- MAIN EMAIL CARD CONTAINER WITH BORDER & ROUNDED CORNERS -->
+                <table role="presentation" border="0" cellspacing="0" cellpadding="0" style="width: 100%; max-width: 600px; background-color: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); margin: 0 auto; text-align: left;">
+                    
+                    <!-- BANNER HEADER FLUSH WITH TOP CORNERS -->
+                    <tr>
+                        <td style="padding: 0; margin: 0; line-height: 0; font-size: 0; background-color: #0b0f19;">
+                            <img 
+                                src="${bannerUrl}" 
+                                alt="Xcelerate-2K26 • SRKR ACM Student Chapter" 
+                                width="600" 
+                                style="width: 100%; max-width: 600px; height: auto; display: block; border: 0; margin: 0; border-radius: 14px 14px 0 0;"
+                            />
+                        </td>
+                    </tr>
 
-        <p style="margin: 0 0 14px; font-size: 15px; color: #0f172a; font-weight: 600;">
-            Dear ${name},
-        </p>
+                    <!-- CONTENT WITH NEAT INNER PADDING -->
+                    <tr>
+                        <td style="padding: 28px 24px 30px; font-size: 15px; line-height: 1.7; color: #334155; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+                            
+                            <p style="margin: 0 0 14px; font-size: 15.5px; color: #0f172a; font-weight: 700;">
+                                Dear ${name},
+                            </p>
 
-        <p style="margin: 0 0 14px; font-size: 15px; color: #334155;">
-            Congratulations! Your registration for <strong>Xcelerate-2K26</strong> has been successfully completed.
-        </p>
+                            <p style="margin: 0 0 14px; font-size: 15px; color: #334155; line-height: 1.7;">
+                                Congratulations! Your registration for <strong>Xcelerate-2K26</strong> has been successfully completed.
+                            </p>
 
-        <p style="margin: 0 0 20px; font-size: 15px; color: #334155;">
-            We’re delighted to have you join us for this two-day technical event, where you’ll <em>Engage, Explore, and Evolve</em> while discovering emerging technologies and exploring your areas of interest.
-        </p>
+                            <p style="margin: 0 0 20px; font-size: 15px; color: #334155; line-height: 1.7;">
+                                We’re delighted to have you join us for this two-day technical event, where you’ll <em>Engage, Explore, and Evolve</em> while discovering emerging technologies and exploring your areas of interest.
+                            </p>
 
-        <p style="margin: 22px 0 8px; font-size: 15px; font-weight: 700; color: #0f172a;">
-            What You’ll Explore 📚
-        </p>
-        <ul style="margin: 0 0 22px; padding-left: 20px; color: #334155; font-size: 14.5px; line-height: 1.85;">
-            <li>Emerging technologies &amp; applications</li>
-            <li>Hands-on technical skills</li>
-            <li>Insights into diverse domains</li>
-            <li>Career &amp; learning pathways</li>
-            <li>Direction for your technical journey</li>
-        </ul>
+                            <p style="margin: 22px 0 8px; font-size: 15px; font-weight: 700; color: #0f172a;">
+                                What You’ll Explore 📚
+                            </p>
+                            <ul style="margin: 0 0 22px; padding-left: 20px; color: #334155; font-size: 14.5px; line-height: 1.85;">
+                                <li>Emerging technologies &amp; applications</li>
+                                <li>Hands-on technical skills</li>
+                                <li>Insights into diverse domains</li>
+                                <li>Career &amp; learning pathways</li>
+                                <li>Direction for your technical journey</li>
+                            </ul>
 
-        ${qrSectionHtml}
+                            ${qrSectionHtml}
 
-        <p style="margin: 20px 0 18px; font-size: 15px; color: #334155;">
-            We look forward to having you at <strong>Xcelerate-2K26</strong> and making these two days a meaningful and enriching learning experience.
-        </p>
+                            <p style="margin: 22px 0 18px; font-size: 15px; color: #334155; line-height: 1.7;">
+                                We look forward to having you at <strong>Xcelerate-2K26</strong> and making these two days a meaningful and enriching learning experience.
+                            </p>
 
-        <p style="margin: 22px 0 4px; font-size: 15px; font-weight: 700; color: #0f172a;">
-            Your journey starts here.
-        </p>
-        <p style="margin: 0 0 24px; font-size: 14.5px; color: #2563eb; font-style: italic;">
-            - with ACM by your side, opening the door to new technologies, opportunities, and possibilities. ✨
-        </p>
+                            <p style="margin: 22px 0 4px; font-size: 15px; font-weight: 700; color: #0f172a;">
+                                Your journey starts here.
+                            </p>
+                            <p style="margin: 0 0 26px; font-size: 14.5px; color: #2563eb; font-style: italic;">
+                                - with ACM by your side, opening the door to new technologies, opportunities, and possibilities. ✨
+                            </p>
 
-        <div style="margin-top: 32px; padding-top: 16px; border-top: 1px solid #e2e8f0; font-size: 13px; color: #64748b; line-height: 1.6;">
-            <p style="margin: 0 0 4px; font-weight: 600; color: #0f172a;">
-                SRKR ACM Student Chapter
-            </p>
-            <p style="margin: 0;">
-                Department of Computer Science &amp; Engineering &bull; SRKR Engineering College
-            </p>
-        </div>
-    </div>
+                            <div style="margin-top: 28px; padding-top: 16px; border-top: 1px solid #e2e8f0; font-size: 13px; color: #64748b; line-height: 1.6;">
+                                <p style="margin: 0 0 4px; font-weight: 700; color: #0f172a;">
+                                    SRKR ACM Student Chapter
+                                </p>
+                                <p style="margin: 0; color: #64748b;">
+                                    Department of Computer Science &amp; Engineering &bull; SRKR Engineering College
+                                </p>
+                            </div>
+
+                        </td>
+                    </tr>
+                </table>
+
+            </td>
+        </tr>
+    </table>
 </body>
 </html>
     `;
