@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import mongoose from "mongoose";
 
 dotenv.config();
 import registerRoutes from "./routes/registerRoutes.js";
@@ -54,12 +55,21 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: "25mb" }));
 app.use(express.urlencoded({ extended: true, limit: "25mb" }));
 
-app.get("/", (req, res) => {
-    res.json({
+// Health check routes for Render / UptimeRobot / cron-job.org keep-alive
+const healthCheckHandler = (req, res) => {
+    res.status(200).json({
         success: true,
-        message: "ACM Registration API is running."
+        status: "healthy",
+        uptime: `${Math.floor(process.uptime())}s`,
+        database: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
+        timestamp: new Date().toISOString(),
     });
-});
+};
+
+app.get("/", healthCheckHandler);
+app.get("/health", healthCheckHandler);
+app.get("/healthz", healthCheckHandler);
+app.get("/api/health", healthCheckHandler);
 
 app.use(
     "/api/auth",
