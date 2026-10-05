@@ -321,6 +321,9 @@ export default function App() {
                 val = val.slice(0, -9);
             }
             setFormData((prev) => ({ ...prev, email: val }));
+        } else if (name === "utrId") {
+            const cleanDigits = value.replace(/\D/g, "").slice(0, 12);
+            setFormData((prev) => ({ ...prev, utrId: cleanDigits }));
         } else {
             setFormData((prev) => ({ ...prev, [name]: value }));
         }
@@ -573,8 +576,13 @@ export default function App() {
                 setError("Please upload your PhonePe / UPI payment screenshot.");
                 return;
             }
-            if (!formData.utrId.trim()) {
+            const cleanUtr = (formData.utrId || "").trim();
+            if (!cleanUtr) {
                 setError("Please enter your 12-digit Unique Transaction Reference (UTR) ID.");
+                return;
+            }
+            if (!/^[0-9]{12}$/.test(cleanUtr)) {
+                setError("UPI UTR must be exactly 12 digits, purely numeric (e.g. 523412345678).");
                 return;
             }
         }
@@ -1839,12 +1847,14 @@ export default function App() {
                                                         name="utrId"
                                                         value={formData.utrId}
                                                         onChange={handleChange}
-                                                        placeholder="12-digit UTR ID from payment app"
-                                                        style={{ textTransform: "uppercase" }}
+                                                        placeholder="12-digit numeric UTR ID (e.g. 523412345678)"
+                                                        maxLength={12}
+                                                        pattern="[0-9]{12}"
+                                                        inputMode="numeric"
                                                         required
                                                     />
                                                     <span className="field-helper-text">
-                                                        Enter the 12-digit UTR / UPI Ref ID from your payment confirmation.
+                                                        ℹ️ Enter the exactly 12-digit purely numeric UTR / UPI Ref ID from your payment confirmation.
                                                     </span>
                                                 </div>
                                             </>

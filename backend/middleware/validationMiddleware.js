@@ -120,20 +120,19 @@ const registrationSchema = Joi.object({
             otherwise: Joi.string().allow("", null).optional(),
         }),
 
-    // Required only for Online payments
+    // Required only for Online payments: exactly 12 numeric digits
     utrId: Joi.string()
         .trim()
-        .uppercase()
         .allow("", null)
         .when("paymentMode", {
             is: "Online",
             then: Joi.string()
-                .min(4)
-                .max(50)
+                .pattern(/^[0-9]{12}$/)
                 .required()
                 .messages({
-                    "string.empty": "UTR / Transaction Reference ID is required.",
-                    "any.required": "UTR / Transaction Reference ID is required.",
+                    "string.empty": "12-digit numeric UPI UTR ID is required.",
+                    "string.pattern.base": "UPI UTR must be exactly 12 digits, purely numeric.",
+                    "any.required": "12-digit numeric UPI UTR ID is required.",
                 }),
             otherwise: Joi.string().allow("", null).optional(),
         }),

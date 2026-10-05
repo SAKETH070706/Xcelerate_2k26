@@ -35,7 +35,7 @@ export const registerUser = async (data) => {
     const registrationNumber = String(rawRegNo).trim().toUpperCase();
     const whatsappNumber = String(rawPhone).replace(/\D/g, "").slice(-10);
     const aceId = rawAceId ? String(rawAceId).trim().toUpperCase() : null;
-    const utrId = rawUtrId ? String(rawUtrId).trim().toUpperCase() : (paymentMode === "Offline" ? `OFFLINE-CASH-${crypto.randomBytes(3).toString("hex").toUpperCase()}` : null);
+    const utrId = rawUtrId ? String(rawUtrId).replace(/\D/g, "").slice(0, 12) : (paymentMode === "Offline" ? `OFFLINE-CASH-${crypto.randomBytes(3).toString("hex").toUpperCase()}` : null);
 
     // 1. Check duplicate email in actual registrations
     const existingEmail = await Registration.findOne({ email });
@@ -61,8 +61,13 @@ export const registerUser = async (data) => {
         throw error;
     }
 
-    // 4. Check duplicate UTR ID for online registrations
-    if (paymentMode === "Online" && utrId) {
+    // 4. Check valid format and duplicate UTR ID for online registrations (strictly 12 numeric digits)
+    if (paymentMode === "Online") {
+        if (!utrId || !/^[0-9]{12}$/.test(utrId)) {
+            const error = new Error("UPI UTR must be exactly 12 digits, purely numeric.");
+            error.statusCode = 400;
+            throw error;
+        }
         const existingUtr = await Registration.findOne({ utrId });
         if (existingUtr) {
             const error = new Error(`UTR / Transaction Reference ${utrId} has already been submitted.`);
