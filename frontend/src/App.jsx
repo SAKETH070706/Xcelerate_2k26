@@ -1536,21 +1536,8 @@ export default function App() {
                                             }}>
                                                 <span style={{ fontSize: "24px", lineHeight: "1" }}>🌟</span>
                                                 <div style={{ flex: 1 }}>
-                                                    <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginBottom: "4px" }}>
+                                                    <div style={{ marginBottom: "4px" }}>
                                                         <strong style={{ color: "#166534", fontSize: "14px" }}>Verified ACM Member Profile</strong>
-                                                        {formData.aceId && (
-                                                            <span style={{
-                                                                background: "#166534",
-                                                                color: "#ffffff",
-                                                                fontSize: "11px",
-                                                                fontWeight: "700",
-                                                                padding: "2px 8px",
-                                                                borderRadius: "9999px",
-                                                                fontFamily: "monospace"
-                                                            }}>
-                                                                {formData.aceId}
-                                                            </span>
-                                                        )}
                                                     </div>
                                                     <p style={{ color: "#15803d", fontSize: "12.5px", margin: "0", lineHeight: "1.45" }}>
                                                         Default details loaded from ACM records. <strong>All fields below are editable</strong> — you can update your Email, Phone Number, or Name if your records need to be updated.
