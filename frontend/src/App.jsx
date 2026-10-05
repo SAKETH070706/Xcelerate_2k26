@@ -64,7 +64,13 @@ export default function App() {
     const [activeDayIndex, setActiveDayIndex] = useState(0);
 
     // Secret Offline Desk State
-    const [isOfflineDesk, setIsOfflineDesk] = useState(false);
+    const [isOfflineDesk, setIsOfflineDesk] = useState(() => {
+        try {
+            return sessionStorage.getItem("xcelerate_offline_desk_mode") === "true";
+        } catch {
+            return false;
+        }
+    });
     const [showOfflinePasscodeModal, setShowOfflinePasscodeModal] = useState(false);
     const [offlinePasscodeInput, setOfflinePasscodeInput] = useState("");
     const [offlinePasscodeError, setOfflinePasscodeError] = useState("");
@@ -315,6 +321,11 @@ export default function App() {
         const configuredPasscode = (import.meta.env.VITE_ADMIN_PASSCODE || "admin123").trim();
         if (offlinePasscodeInput.trim() === configuredPasscode) {
             setIsOfflineDesk(true);
+            try {
+                sessionStorage.setItem("xcelerate_offline_desk_mode", "true");
+            } catch (err) {
+                console.warn(err);
+            }
             setUnlockedAdminPasscode(offlinePasscodeInput.trim());
             setShowOfflinePasscodeModal(false);
             setOfflinePasscodeInput("");
@@ -327,6 +338,11 @@ export default function App() {
 
     const handleExitOfflineDesk = () => {
         setIsOfflineDesk(false);
+        try {
+            sessionStorage.removeItem("xcelerate_offline_desk_mode");
+        } catch (err) {
+            console.warn(err);
+        }
         setError("");
     };
 
@@ -379,20 +395,8 @@ export default function App() {
         }
     };
 
-    // Reset flow to register another attendee
-    const handleRegisterAnother = () => {
-        try {
-            localStorage.removeItem("xcelerate_registered_pass");
-        } catch (e) {
-            console.warn(e);
-        }
-        setExistingSubmission(null);
-        setSuccessData(null);
-        setPassQrDataUrl("");
-        setMembershipChoice(null);
-        setVerifiedMember(null);
-        setMemberEmailChoice("keep");
-        setCustomMemberEmail("");
+    // Reset form fields
+    const resetRegistrationForm = () => {
         setFormData({
             name: "",
             email: "",
@@ -406,10 +410,30 @@ export default function App() {
             utrId: "",
             declarationConfirmed: false,
         });
+        setMembershipChoice(null);
+        setVerifiedMember(null);
+        setMemberEmailChoice("keep");
+        setCustomMemberEmail("");
         setPreviews({ payment: null });
+        if (paymentFileInputRef.current) {
+            paymentFileInputRef.current.value = "";
+        }
         setCurrentStep(1);
         setError("");
         scrollToForm();
+    };
+
+    // Reset flow for next participant
+    const handleAddNextParticipant = () => {
+        try {
+            localStorage.removeItem("xcelerate_registered_pass");
+        } catch (e) {
+            console.warn(e);
+        }
+        setExistingSubmission(null);
+        setSuccessData(null);
+        setPassQrDataUrl("");
+        resetRegistrationForm();
     };
 
     // ========================================================
@@ -700,33 +724,17 @@ export default function App() {
                 }),
             };
 
-            try {
-                localStorage.setItem("xcelerate_registered_pass", JSON.stringify(submissionRecord));
-            } catch (storageErr) {
-                console.warn("Storage warning:", storageErr);
+            if (!isOfflineDesk) {
+                try {
+                    localStorage.setItem("xcelerate_registered_pass", JSON.stringify(submissionRecord));
+                } catch (storageErr) {
+                    console.warn("Storage warning:", storageErr);
+                }
+                setExistingSubmission(submissionRecord);
             }
 
-            setExistingSubmission(submissionRecord);
             setSuccessData(submissionRecord);
-
-            // Reset form
-            setFormData({
-                name: "",
-                email: "",
-                registrationNumber: "",
-                branch: "",
-                section: "",
-                whatsappNumber: "",
-                isAcmMember: false,
-                aceId: "",
-                paymentScreenshot: "",
-                utrId: "",
-                declarationConfirmed: false,
-            });
-            setPreviews({ payment: null });
-            setCurrentStep(1);
-            if (paymentFileInputRef.current) paymentFileInputRef.current.value = "";
-            scrollToForm();
+            resetRegistrationForm();
         } catch (err) {
             const msg =
                 err.response?.data?.errors?.[0] ||
@@ -1414,10 +1422,10 @@ export default function App() {
                                         <button
                                             type="button"
                                             className="register-another-btn"
-                                            onClick={handleRegisterAnother}
+                                            onClick={handleAddNextParticipant}
                                         >
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                                            [Admin Desk] Register Another Attendee
+                                            Add Next Participant
                                         </button>
                                     </div>
                                 )}
@@ -2332,9 +2340,15 @@ export default function App() {
                         <button
                             type="button"
                             className="success-modal-btn"
-                            onClick={() => setSuccessData(null)}
+                            onClick={() => {
+                                if (isOfflineDesk) {
+                                    handleAddNextParticipant();
+                                } else {
+                                    setSuccessData(null);
+                                }
+                            }}
                         >
-                            Close &amp; View Pass
+                            {isOfflineDesk ? "Add Next Participant" : "Close & View Pass"}
                         </button>
                     </div>
                 </div>
