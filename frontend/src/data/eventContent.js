@@ -149,22 +149,22 @@ export const EVENT_DATA = {
 
     perks: [
         {
-            icon: "📜",
+            icon: "award",
             title: "Official Certificate",
             description: "Issued by SRKR ACM Student Chapter.",
         },
         {
-            icon: "💻",
+            icon: "laptop",
             title: "Dedicated Domain Lab",
             description: "Full-day practical training exclusively in your selected domain on Day 2.",
         },
         {
-            icon: "📦",
+            icon: "package",
             title: "Curated Resource Kit",
             description: "Source code repositories, slide decks, and reference guides.",
         },
         {
-            icon: "🤝",
+            icon: "users",
             title: "Mentor Support",
             description: "Direct assistance from domain leads during hands-on sessions.",
         },

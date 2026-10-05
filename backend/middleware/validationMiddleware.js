@@ -178,7 +178,8 @@ export const validateRegistration = (req, res, next) => {
 
     // Validate admin passcode if offline registration is attempted
     if (req.body.paymentMode === "Offline") {
-        if (req.body.adminPasscode !== "admin123") {
+        const expectedPasscode = (process.env.ADMIN_PASSCODE || "admin123").trim();
+        if (!req.body.adminPasscode || req.body.adminPasscode.trim() !== expectedPasscode) {
             return res.status(403).json({
                 success: false,
                 message: "Unauthorized: Invalid offline desk admin passcode.",

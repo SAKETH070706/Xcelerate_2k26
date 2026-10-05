@@ -93,7 +93,7 @@ const renderPage = ({ valid, participant, query }) => `
 <body>
     <div class="card">
         <div class="header">
-            <div class="badge">${valid ? "VALID ATTENDEE PASS ✓" : "INVALID TOKEN ✗"}</div>
+            <div class="badge">${valid ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="vertical-align: -1px; margin-right: 4px;"><polyline points="20 6 9 17 4 12"></polyline></svg> VALID ATTENDEE PASS' : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="vertical-align: -1px; margin-right: 4px;"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg> INVALID TOKEN'}</div>
             <h1>${valid ? participant.name : "Pass Not Found"}</h1>
             <p class="subtitle">Xcelerate-2K26 &bull; SRKR ACM Chapter</p>
         </div>
@@ -109,16 +109,16 @@ const renderPage = ({ valid, participant, query }) => `
                 </div>
                 <div class="detail-row">
                     <span class="label">Membership</span>
-                    <span class="value">${participant.isAcmMember ? "ACM Member (Verified)" : "Non-Member"}</span>
+                    <span class="value">${participant.isAcmMember ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" stroke-width="1.5" style="vertical-align: -1px; margin-right: 4px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg> ACM Member (Verified)' : "Non-Member"}</span>
                 </div>
                 <div class="detail-row">
                     <span class="label">Payment Status</span>
-                    <span class="value" style="color: #34d399;">${participant.paymentMode === "Offline" ? "Offline Desk (Cash)" : "Online (UPI)"}</span>
+                    <span class="value" style="color: #34d399;">${participant.paymentMode === "Offline" ? "Offline Desk (Cash)" : 'Online (UPI) <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align: -1px; margin-left: 2px;"><polyline points="20 6 9 17 4 12"></polyline></svg>'}</span>
                 </div>
                 <div class="checkin-status">
                     ${participant.attendanceMarked
-                        ? `✓ Attendance Recorded (${new Date(participant.attendanceMarkedAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })})`
-                        : "⏳ Ready for Check-in at Entry Desk"}
+                        ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align: -2px; margin-right: 4px;"><polyline points="20 6 9 17 4 12"></polyline></svg> Attendance Recorded (${new Date(participant.attendanceMarkedAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })})`
+                        : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align: -2px; margin-right: 4px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Ready for Check-in at Entry Desk`}
                 </div>
             ` : `
                 <p style="color: #ef4444; font-size: 14px; margin-bottom: 12px;">
@@ -206,8 +206,9 @@ export const verifyCertificate = async (req, res) => {
 export const markAttendance = async (req, res) => {
     try {
         let { token, adminPasscode, scannedBy = "EBM Desk" } = req.body;
+        const expectedPasscode = (process.env.ADMIN_PASSCODE || "admin123").trim();
 
-        if (adminPasscode !== "admin123") {
+        if (!adminPasscode || adminPasscode.trim() !== expectedPasscode) {
             return res.status(403).json({
                 success: false,
                 message: "Unauthorized: Invalid admin passcode.",
