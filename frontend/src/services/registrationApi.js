@@ -1,13 +1,12 @@
 import axios from "axios";
 
 // Dynamically determine the backend API URL:
-// 1. If VITE_API_URL is set to an external domain (production), use it.
-// 2. If running in browser and accessed via a local network IP (e.g. 192.168.137.126:5173),
-//    automatically route to http://<hostname>:5000/api so mobile devices connect seamlessly.
-// 3. Otherwise fall back to http://localhost:5000/api.
+// 1. Strictly adhere to VITE_API_URL if configured in .env.
+// 2. If running on local network IP (e.g. 192.168.x.x:5173), route to local backend.
+// 3. Otherwise fall back to production backend: https://xcelerate-2k26.onrender.com/api.
 const getBaseUrl = () => {
     const envUrl = (import.meta.env.VITE_API_URL || "").trim().replace(/\/+$/, "");
-    if (envUrl && !envUrl.includes("localhost") && !envUrl.includes("127.0.0.1")) {
+    if (envUrl) {
         return envUrl;
     }
 
@@ -18,7 +17,7 @@ const getBaseUrl = () => {
         }
     }
 
-    return envUrl || "http://localhost:5000/api";
+    return "https://xcelerate-2k26.onrender.com/api";
 };
 
 const API = axios.create({

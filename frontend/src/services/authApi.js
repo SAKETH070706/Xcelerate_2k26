@@ -2,7 +2,7 @@ import axios from "axios";
 
 const getBaseUrl = () => {
     const envUrl = (import.meta.env.VITE_API_URL || "").trim().replace(/\/+$/, "");
-    if (envUrl && !envUrl.includes("localhost") && !envUrl.includes("127.0.0.1")) {
+    if (envUrl) {
         return envUrl;
     }
 
@@ -13,7 +13,7 @@ const getBaseUrl = () => {
         }
     }
 
-    return envUrl || "http://localhost:5000/api";
+    return "https://xcelerate-2k26.onrender.com/api";
 };
 
 const API = axios.create({

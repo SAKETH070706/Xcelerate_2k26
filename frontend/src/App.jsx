@@ -1,10 +1,38 @@
 import { useState, useRef, useEffect } from "react";
 import QRCode from "qrcode";
+import {
+    BookOpen,
+    Laptop,
+    Award,
+    Package,
+    Users,
+    Sparkles,
+    CheckCircle2,
+    XCircle,
+    Star,
+    GraduationCap,
+    Clock,
+    Wrench,
+    Lock,
+    AlertTriangle,
+    PartyPopper,
+    Mail,
+    Edit3
+} from "lucide-react";
 import { registerParticipant, checkMemberPhone, fetchPaymentConfig } from "./services/registrationApi";
 import AsteroidsBackground from "./components/AsteroidsBackground";
 import aceLogo from "./assets/ace-logo.png";
 import { EVENT_DATA } from "./data/eventContent";
 import "./index.css";
+
+const renderPerkIcon = (icon) => {
+    if (typeof icon === "object") return icon;
+    if (icon === "award" || icon === "certificate" || icon === "\uD83D\uDCDC") return <Award size={22} />;
+    if (icon === "laptop" || icon === "\uD83D\uDCBB") return <Laptop size={22} />;
+    if (icon === "package" || icon === "\uD83D\uDCE6") return <Package size={22} />;
+    if (icon === "users" || icon === "mentorship" || icon === "\uD83E\uDD1D") return <Users size={22} />;
+    return <Sparkles size={22} />;
+};
 
 const BRANCH_OPTIONS = [
     "CSE",
@@ -40,6 +68,9 @@ export default function App() {
     const [showOfflinePasscodeModal, setShowOfflinePasscodeModal] = useState(false);
     const [offlinePasscodeInput, setOfflinePasscodeInput] = useState("");
     const [offlinePasscodeError, setOfflinePasscodeError] = useState("");
+    const [unlockedAdminPasscode, setUnlockedAdminPasscode] = useState("");
+    const [memberEmailChoice, setMemberEmailChoice] = useState("keep"); // "keep" | "change"
+    const [customMemberEmail, setCustomMemberEmail] = useState("");
     const logoClickCountRef = useRef(0);
     const logoClickTimerRef = useRef(null);
 
@@ -173,18 +204,9 @@ export default function App() {
     useEffect(() => {
         const token = existingSubmission?.qrToken || successData?.qrToken;
         if (token) {
-            // Encode clickable verification URL from VITE_PASS_URL .env (or origin / Wi-Fi fallback)
+            // Encode clickable verification URL strictly from VITE_PASS_URL .env (or window.location.origin)
             let appBase = (import.meta.env.VITE_PASS_URL || "").trim().replace(/\/+$/, "");
-            if (typeof window !== "undefined" && window.location.origin) {
-                // In production (e.g. Vercel), always prefer the real origin
-                if (!window.location.hostname.includes("localhost") && !window.location.hostname.includes("127.0.0.1")) {
-                    appBase = window.location.origin;
-                }
-            }
-            if (!appBase && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
-                appBase = "http://192.168.0.4:5173";
-            }
-            if (!appBase && typeof window !== "undefined") {
+            if (!appBase && typeof window !== "undefined" && window.location.origin) {
                 appBase = window.location.origin;
             }
             const passUrl = `${appBase}/verify/${token}`;
@@ -225,12 +247,14 @@ export default function App() {
                 setScannedLoading(true);
                 setScannedError("");
 
-                // Multi-endpoint fallback to ensure verification works seamlessly
+                // Strictly adhere to VITE_API_URL from .env with fallback to production backend
+                const apiBase = (import.meta.env.VITE_API_URL || "https://xcelerate-2k26.onrender.com/api").trim().replace(/\/+$/, "");
                 const candidateUrls = [
-                    (import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL.replace(/\/+$/, "")}/verify/${cleanToken}?json=true` : null),
-                    `https://xcelerate-2k26.onrender.com/api/verify/${cleanToken}?json=true`,
+                    `${apiBase}/verify/${cleanToken}?json=true`,
                     `/api/verify/${cleanToken}?json=true`,
-                    `${window.location.protocol}//${window.location.hostname}:5000/api/verify/${cleanToken}?json=true`,
+                    (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"))
+                        ? `http://${window.location.hostname}:5000/api/verify/${cleanToken}?json=true`
+                        : null,
                 ].filter(Boolean);
 
                 let resolved = false;
@@ -288,8 +312,10 @@ export default function App() {
 
     const handleUnlockOfflineDesk = (e) => {
         e.preventDefault();
-        if (offlinePasscodeInput === "admin123") {
+        const configuredPasscode = (import.meta.env.VITE_ADMIN_PASSCODE || "admin123").trim();
+        if (offlinePasscodeInput.trim() === configuredPasscode) {
             setIsOfflineDesk(true);
+            setUnlockedAdminPasscode(offlinePasscodeInput.trim());
             setShowOfflinePasscodeModal(false);
             setOfflinePasscodeInput("");
             setOfflinePasscodeError("");
@@ -365,6 +391,8 @@ export default function App() {
         setPassQrDataUrl("");
         setMembershipChoice(null);
         setVerifiedMember(null);
+        setMemberEmailChoice("keep");
+        setCustomMemberEmail("");
         setFormData({
             name: "",
             email: "",
@@ -414,7 +442,9 @@ export default function App() {
                         emailUser = emailUser.slice(0, -9);
                     }
 
-                    // Autofill verified member fields (attendee is free to edit/update any field)
+                    // Autofill verified member fields
+                    setMemberEmailChoice("keep");
+                    setCustomMemberEmail("");
                     setFormData((prev) => ({
                         ...prev,
                         name: mem.name || "",
@@ -448,37 +478,69 @@ export default function App() {
     const handleNextFromPhase2 = () => {
         setError("");
 
-        if (!formData.name.trim()) {
-            setError("Please enter your full name.");
-            return;
-        }
-        let rawEmail = formData.email.trim().toLowerCase();
-        rawEmail = rawEmail.replace(/@gmail\.com/gi, "").replace(/@.*$/, "");
-        if (rawEmail.endsWith("gmail.com") && rawEmail.length > 9) {
-            rawEmail = rawEmail.slice(0, -9);
-        }
-        rawEmail = rawEmail.trim();
-
-        if (!rawEmail) {
-            setError("Please enter your Gmail username / address.");
-            return;
-        }
-        if (!formData.registrationNumber.trim()) {
-            setError("Please enter your College Registration Number (Roll No).");
-            return;
-        }
-        const cleanPhone = formData.whatsappNumber.replace(/\D/g, "");
-        if (cleanPhone.length !== 10) {
-            setError("WhatsApp Number must be exactly 10 digits.");
-            return;
-        }
-        if (!formData.branch) {
-            setError("Please select your branch.");
-            return;
-        }
-        if (!formData.section) {
-            setError("Please select your section.");
-            return;
+        if (formData.isAcmMember) {
+            if (!formData.name.trim()) {
+                setError("Full Name is missing. Please go back and verify your WhatsApp number.");
+                return;
+            }
+            const cleanEmail = formData.email.trim();
+            if (!cleanEmail) {
+                setError("Please enter or confirm your Gmail address.");
+                return;
+            }
+            if (cleanEmail.includes("@") && !cleanEmail.toLowerCase().endsWith("@gmail.com")) {
+                setError("Only @gmail.com addresses are supported. Please enter a valid Gmail address.");
+                return;
+            }
+            const emailPrefix = cleanEmail.replace(/@gmail\.com$/i, "").replace(/@.*$/, "").trim();
+            if (!emailPrefix) {
+                setError("Please enter a valid Gmail address or username.");
+                return;
+            }
+            if (!formData.registrationNumber.trim()) {
+                setError("Please enter your College Registration Number (Roll No).");
+                return;
+            }
+            if (!formData.section) {
+                setError("Please select your section.");
+                return;
+            }
+        } else {
+            if (!formData.name.trim()) {
+                setError("Please enter your full name.");
+                return;
+            }
+            const rawEmail = formData.email.trim();
+            if (!rawEmail) {
+                setError("Please enter your Gmail address or username.");
+                return;
+            }
+            if (rawEmail.includes("@") && !rawEmail.toLowerCase().endsWith("@gmail.com")) {
+                setError("Only @gmail.com addresses are supported. Please enter a valid Gmail address.");
+                return;
+            }
+            const emailPrefix = rawEmail.replace(/@gmail\.com$/i, "").replace(/@.*$/, "").trim();
+            if (!emailPrefix) {
+                setError("Please enter a valid Gmail address or username.");
+                return;
+            }
+            if (!formData.registrationNumber.trim()) {
+                setError("Please enter your College Registration Number.");
+                return;
+            }
+            const cleanPhone = formData.whatsappNumber.replace(/\D/g, "");
+            if (cleanPhone.length !== 10) {
+                setError("WhatsApp Number must be exactly 10 digits.");
+                return;
+            }
+            if (!formData.branch) {
+                setError("Please select your branch.");
+                return;
+            }
+            if (!formData.section) {
+                setError("Please select your section.");
+                return;
+            }
         }
 
         setCurrentStep(3);
@@ -595,13 +657,11 @@ export default function App() {
         setLoading(true);
 
         try {
-            let emailUsername = formData.email.trim().toLowerCase();
-            emailUsername = emailUsername.replace(/@gmail\.com/gi, "").replace(/@.*$/, "");
+            let emailUsername = formData.email.trim().toLowerCase().replace(/@gmail\.com$/i, "").replace(/@.*$/, "");
             if (emailUsername.endsWith("gmail.com") && emailUsername.length > 9) {
                 emailUsername = emailUsername.slice(0, -9);
             }
             emailUsername = emailUsername.trim();
-
             const fullEmail = `${emailUsername}@gmail.com`;
 
             const payload = {
@@ -617,7 +677,7 @@ export default function App() {
                 paymentScreenshot: isOfflineDesk ? null : formData.paymentScreenshot,
                 utrId: isOfflineDesk ? null : formData.utrId.trim().toUpperCase(),
                 declarationConfirmed: formData.declarationConfirmed,
-                adminPasscode: isOfflineDesk ? "admin123" : undefined,
+                adminPasscode: isOfflineDesk ? (unlockedAdminPasscode || import.meta.env.VITE_ADMIN_PASSCODE || "admin123") : undefined,
             };
 
             const response = await registerParticipant(payload);
@@ -768,10 +828,9 @@ export default function App() {
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            fontSize: "18px",
                             flexShrink: 0
                         }}>
-                            {activeDayIndex === 0 ? "📘" : "💻"}
+                            {activeDayIndex === 0 ? <BookOpen size={18} /> : <Laptop size={18} />}
                         </div>
                         <div>
                             <div style={{ fontSize: "14.5px", fontWeight: "800", color: "#0f172a" }}>
@@ -867,7 +926,7 @@ export default function App() {
                         {(EVENT_DATA.perks || []).map((perk, pIdx) => (
                             <div key={pIdx} className="perk-card">
                                 <div className="perk-icon-wrapper">
-                                    {perk.icon || "✨"}
+                                    {renderPerkIcon(perk.icon)}
                                 </div>
                                 <div className="perk-card-content">
                                     <h4 className="perk-title">{perk.title}</h4>
@@ -956,7 +1015,9 @@ export default function App() {
                                 position: "relative"
                             }}>
                                 <div style={{
-                                    display: "inline-block",
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: "6px",
                                     background: "rgba(255, 255, 255, 0.25)",
                                     color: "#fff",
                                     fontSize: "11px",
@@ -968,7 +1029,7 @@ export default function App() {
                                     marginBottom: "12px",
                                     backdropFilter: "blur(4px)"
                                 }}>
-                                    INVALID TOKEN ✗
+                                    INVALID TOKEN <XCircle size={14} />
                                 </div>
                                 <h1 style={{ fontSize: "22px", fontWeight: "800", color: "#fff", marginBottom: "4px" }}>
                                     Pass Not Found
@@ -1018,7 +1079,9 @@ export default function App() {
                                 position: "relative"
                             }}>
                                 <div style={{
-                                    display: "inline-block",
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: "6px",
                                     background: "rgba(255, 255, 255, 0.25)",
                                     color: "#fff",
                                     fontSize: "11px",
@@ -1030,7 +1093,7 @@ export default function App() {
                                     marginBottom: "12px",
                                     backdropFilter: "blur(4px)"
                                 }}>
-                                    VALID ATTENDEE PASS ✓
+                                    VALID ATTENDEE PASS <CheckCircle2 size={14} />
                                 </div>
                                 <h1 style={{ fontSize: "22px", fontWeight: "800", color: "#fff", marginBottom: "4px" }}>
                                     {scannedAttendee.name}
@@ -1055,14 +1118,22 @@ export default function App() {
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid rgba(255, 255, 255, 0.07)", fontSize: "14px" }}>
                                     <span style={{ color: "#9ca3af", fontWeight: "600" }}>Membership</span>
                                     <span style={{ color: "#f9fafb", fontWeight: "700" }}>
-                                        {scannedAttendee.isAcmMember ? "🌟 ACM Member (Verified)" : "Non-Member"}
+                                        {scannedAttendee.isAcmMember ? (
+                                            <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}>
+                                                <Star size={14} color="#f59e0b" fill="#f59e0b" /> ACM Member (Verified)
+                                            </span>
+                                        ) : "Non-Member"}
                                     </span>
                                 </div>
 
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", fontSize: "14px" }}>
                                     <span style={{ color: "#9ca3af", fontWeight: "600" }}>Payment Status</span>
                                     <span style={{ color: "#34d399", fontWeight: "700" }}>
-                                        {scannedAttendee.paymentMode === "Offline" ? "Offline Desk (Cash)" : "Online (UPI) ✓"}
+                                        {scannedAttendee.paymentMode === "Offline" ? "Offline Desk (Cash)" : (
+                                            <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}>
+                                                Online (UPI) <CheckCircle2 size={14} />
+                                            </span>
+                                        )}
                                     </span>
                                 </div>
 
@@ -1078,9 +1149,15 @@ export default function App() {
                                     color: scannedAttendee.attendanceMarked ? "#34d399" : "#fbbf24",
                                     border: `1px solid ${scannedAttendee.attendanceMarked ? "rgba(16, 185, 129, 0.3)" : "rgba(245, 158, 11, 0.3)"}`
                                 }}>
-                                    {scannedAttendee.attendanceMarked
-                                        ? `✓ Attendance Recorded (${new Date(scannedAttendee.attendanceMarkedAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })})`
-                                        : "⏳ Ready for Check-in at Entry Desk"}
+                                    {scannedAttendee.attendanceMarked ? (
+                                        <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+                                            <CheckCircle2 size={15} /> Attendance Recorded ({new Date(scannedAttendee.attendanceMarkedAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })})
+                                        </span>
+                                    ) : (
+                                        <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+                                            <Clock size={15} /> Ready for Check-in at Entry Desk
+                                        </span>
+                                    )}
                                 </div>
 
                                 {/* ACTION BUTTON */}
@@ -1215,7 +1292,9 @@ export default function App() {
                         {isOfflineDesk && (
                             <div className="offline-desk-banner">
                                 <div className="offline-desk-info">
-                                    <span className="offline-desk-tag">🛠️ Admin Mode</span>
+                                    <span className="offline-desk-tag" style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                                        <Wrench size={13} /> Admin Mode
+                                    </span>
                                     <strong>Offline Desk Registration (Cash Payment)</strong>
                                     <p>Payment screenshot and UTR are bypassed. Cash collected at desk.</p>
                                 </div>
@@ -1277,7 +1356,15 @@ export default function App() {
                                     <div className="submitted-receipt-row">
                                         <span className="submitted-label">Category</span>
                                         <span className="submitted-val">
-                                            {existingSubmission.isAcmMember ? "🌟 ACM Member (Verified)" : "🎓 Regular Participant"}
+                                            {existingSubmission.isAcmMember ? (
+                                                <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}>
+                                                    <Star size={14} color="#f59e0b" fill="#f59e0b" /> ACM Member (Verified)
+                                                </span>
+                                            ) : (
+                                                <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}>
+                                                    <GraduationCap size={14} /> Regular Participant
+                                                </span>
+                                            )}
                                         </span>
                                     </div>
                                     <div className="submitted-receipt-row">
@@ -1311,7 +1398,9 @@ export default function App() {
                                     gap: "12px",
                                     textAlign: "left"
                                 }}>
-                                    <div style={{ fontSize: "22px", flexShrink: 0 }}>🔒</div>
+                                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "38px", height: "38px", borderRadius: "10px", background: "#e2e8f0", color: "#334155", flexShrink: 0 }}>
+                                        <Lock size={18} />
+                                    </div>
                                     <div style={{ fontSize: "13px", color: "#64748b", lineHeight: "1.45" }}>
                                         <strong style={{ color: "#0f172a", display: "block", marginBottom: "3px" }}>
                                             Device Registration Completed
@@ -1424,7 +1513,9 @@ export default function App() {
                                                         {membershipChoice === "yes" && <div className="dot-inner" />}
                                                     </div>
                                                     <div className="card-text-block">
-                                                        <h4>🌟 Yes, I am an ACM Member</h4>
+                                                        <h4 style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                                            <Star size={16} color="#f59e0b" fill="#f59e0b" /> Yes, I am an ACM Member
+                                                        </h4>
                                                         <p>Batch 2025 or 2nd-Year Lateral Member</p>
                                                     </div>
                                                 </div>
@@ -1437,7 +1528,9 @@ export default function App() {
                                                         {membershipChoice === "no" && <div className="dot-inner" />}
                                                     </div>
                                                     <div className="card-text-block">
-                                                        <h4>🎓 No, Regular Participant</h4>
+                                                        <h4 style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                                            <GraduationCap size={16} /> No, Regular Participant
+                                                        </h4>
                                                         <p>General symposium attendee</p>
                                                     </div>
                                                 </div>
@@ -1466,8 +1559,9 @@ export default function App() {
                                                         maxLength="10"
                                                         className="mobile-phone-input"
                                                     />
-                                                    <span className="field-helper-text" style={{ color: "#94a3b8", display: "block", marginTop: "6px" }}>
-                                                        ⚠️ <strong>Note:</strong> Must be the exact phone number added in the official ACM WhatsApp group.
+                                                    <span className="field-helper-text" style={{ color: "#94a3b8", display: "flex", alignItems: "center", gap: "6px", marginTop: "6px" }}>
+                                                        <AlertTriangle size={14} color="#f59e0b" style={{ flexShrink: 0 }} />
+                                                        <span><strong>Note:</strong> Must be the exact phone number added in the official ACM WhatsApp group.</span>
                                                     </span>
                                                 </div>
                                             </div>
@@ -1521,160 +1615,335 @@ export default function App() {
                                             </p>
                                         </div>
 
-                                        {/* VERIFIED ACM MEMBER STATUS BANNER */}
-                                        {formData.isAcmMember && (
-                                            <div className="acm-verified-banner" style={{
-                                                background: "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)",
-                                                border: "1.5px solid #86efac",
-                                                borderRadius: "14px",
-                                                padding: "14px 18px",
-                                                marginBottom: "20px",
-                                                display: "flex",
-                                                alignItems: "flex-start",
-                                                gap: "12px",
-                                                boxShadow: "0 2px 8px rgba(22, 163, 74, 0.08)"
-                                            }}>
-                                                <span style={{ fontSize: "24px", lineHeight: "1" }}>🌟</span>
-                                                <div style={{ flex: 1 }}>
-                                                    <div style={{ marginBottom: "4px" }}>
-                                                        <strong style={{ color: "#166534", fontSize: "14px" }}>Verified ACM Member Profile</strong>
+                                        {/* IF ACM MEMBER: SLEEK READ-ONLY VERIFIED CARD + ONLY REMAINING DETAILS */}
+                                        {formData.isAcmMember ? (
+                                            <>
+                                                <div className="verified-member-card">
+                                                    <div className="verified-card-header">
+                                                        <div className="verified-pill">
+                                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                            Verified ACM Member
+                                                        </div>
                                                     </div>
-                                                    <p style={{ color: "#15803d", fontSize: "12.5px", margin: "0", lineHeight: "1.45" }}>
-                                                        Default details loaded from ACM records. <strong>All fields below are editable</strong> — you can update your Email, Phone Number, or Name if your records need to be updated.
-                                                    </p>
+                                                    <div className="verified-info-grid">
+                                                        <div className="verified-info-item">
+                                                            <span className="info-label">Full Name</span>
+                                                            <span className="info-value">{formData.name}</span>
+                                                        </div>
+                                                        <div className="verified-info-item">
+                                                            <span className="info-label">Gmail</span>
+                                                            <span className="info-value">
+                                                                {formData.email.trim() ? (formData.email.includes("@") ? formData.email.trim().toLowerCase() : `${formData.email.trim().toLowerCase()}@gmail.com`) : `${(verifiedMember?.email || "").replace(/@.*$/, "")}@gmail.com`}
+                                                                {memberEmailChoice === "change" && (
+                                                                    <span style={{ fontSize: "11px", marginLeft: "6px", color: "#16a34a", fontWeight: "600" }}>(Updated)</span>
+                                                                )}
+                                                            </span>
+                                                        </div>
+                                                        <div className="verified-info-item">
+                                                            <span className="info-label">Branch</span>
+                                                            <span className="info-value">{formData.branch}</span>
+                                                        </div>
+                                                        <div className="verified-info-item">
+                                                            <span className="info-label">WhatsApp</span>
+                                                            <span className="info-value">{formData.whatsappNumber}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="verified-card-footer" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+                                                        <Lock size={13} /> Verified from ACM 2025 Directory
+                                                    </div>
                                                 </div>
-                                            </div>
+                                                {/* EMAIL CONFIRMATION / CHANGE OPTION FOR ACM MEMBERS */}
+                                                <div style={{
+                                                    marginTop: "16px",
+                                                    padding: "16px 18px",
+                                                    background: "#ffffff",
+                                                    border: "1.5px solid #e2e8f0",
+                                                    borderRadius: "14px",
+                                                    boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
+                                                    textAlign: "left"
+                                                }}>
+                                                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+                                                        <Mail size={16} color="#2563eb" />
+                                                        <span style={{ fontSize: "13.5px", fontWeight: "700", color: "#0f172a" }}>
+                                                            Event Pass Delivery Email
+                                                        </span>
+                                                    </div>
+                                                    <p style={{ fontSize: "12.5px", color: "#64748b", margin: "0 0 12px", lineHeight: "1.45" }}>
+                                                        Your attendance QR pass and confirmation will be sent to this email. Would you like to proceed with your registered directory email or change it?
+                                                    </p>
+
+                                                    <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: memberEmailChoice === "change" ? "12px" : "0" }}>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setMemberEmailChoice("keep");
+                                                                const dirEmail = (verifiedMember?.email || "").replace(/@.*$/, "").trim().toLowerCase();
+                                                                setFormData((prev) => ({ ...prev, email: dirEmail }));
+                                                                if (error) setError("");
+                                                            }}
+                                                            style={{
+                                                                flex: "1 1 200px",
+                                                                display: "inline-flex",
+                                                                alignItems: "center",
+                                                                gap: "8px",
+                                                                padding: "10px 14px",
+                                                                borderRadius: "10px",
+                                                                border: `1.5px solid ${memberEmailChoice === "keep" ? "#2563eb" : "#cbd5e1"}`,
+                                                                background: memberEmailChoice === "keep" ? "#eff6ff" : "#f8fafc",
+                                                                color: memberEmailChoice === "keep" ? "#1e40af" : "#334155",
+                                                                fontSize: "13px",
+                                                                fontWeight: "600",
+                                                                cursor: "pointer",
+                                                                textAlign: "left"
+                                                            }}
+                                                        >
+                                                            <CheckCircle2 size={16} color={memberEmailChoice === "keep" ? "#2563eb" : "#94a3b8"} />
+                                                            <div>
+                                                                <div>Proceed with directory Gmail</div>
+                                                                <div style={{ fontSize: "11.5px", color: "#64748b", fontWeight: "500", marginTop: "2px" }}>
+                                                                    {(verifiedMember?.email || "").includes("@") ? verifiedMember.email : `${(verifiedMember?.email || "").replace(/@.*$/, "")}@gmail.com`}
+                                                                </div>
+                                                            </div>
+                                                        </button>
+
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setMemberEmailChoice("change");
+                                                                if (customMemberEmail) {
+                                                                    setFormData((prev) => ({ ...prev, email: customMemberEmail }));
+                                                                } else {
+                                                                    setFormData((prev) => ({ ...prev, email: "" }));
+                                                                }
+                                                                if (error) setError("");
+                                                            }}
+                                                            style={{
+                                                                flex: "1 1 180px",
+                                                                display: "inline-flex",
+                                                                alignItems: "center",
+                                                                gap: "8px",
+                                                                padding: "10px 14px",
+                                                                borderRadius: "10px",
+                                                                border: `1.5px solid ${memberEmailChoice === "change" ? "#2563eb" : "#cbd5e1"}`,
+                                                                background: memberEmailChoice === "change" ? "#eff6ff" : "#f8fafc",
+                                                                color: memberEmailChoice === "change" ? "#1e40af" : "#334155",
+                                                                fontSize: "13px",
+                                                                fontWeight: "600",
+                                                                cursor: "pointer",
+                                                                textAlign: "left"
+                                                            }}
+                                                        >
+                                                            <Edit3 size={16} color={memberEmailChoice === "change" ? "#2563eb" : "#94a3b8"} />
+                                                            <div>
+                                                                <div>Change Gmail address</div>
+                                                                <div style={{ fontSize: "11.5px", color: "#64748b", fontWeight: "500", marginTop: "2px" }}>
+                                                                    Use a different @gmail.com
+                                                                </div>
+                                                            </div>
+                                                        </button>
+                                                    </div>
+
+                                                    {memberEmailChoice === "change" && (
+                                                        <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px dashed #e2e8f0" }}>
+                                                            <label style={{ display: "block", fontSize: "12.5px", fontWeight: "700", color: "#334155", marginBottom: "6px" }}>
+                                                                Enter New Gmail Address <span style={{ color: "#ef4444" }}>*</span>
+                                                            </label>
+                                                            <div className="email-input-wrapper">
+                                                                <input
+                                                                    type="text"
+                                                                    name="memberEmailInput"
+                                                                    value={formData.email}
+                                                                    onChange={(e) => {
+                                                                        const val = e.target.value;
+                                                                        setCustomMemberEmail(val);
+                                                                        setFormData((prev) => ({ ...prev, email: val }));
+                                                                        if (error) setError("");
+                                                                    }}
+                                                                    placeholder="e.g. yourname or yourname@gmail.com"
+                                                                    autoCapitalize="none"
+                                                                    autoCorrect="off"
+                                                                    spellCheck="false"
+                                                                    required
+                                                                />
+                                                                {!formData.email.includes("@") && (
+                                                                    <span className="gmail-suffix">@gmail.com</span>
+                                                                )}
+                                                            </div>
+                                                            <span className="field-helper-text" style={{ color: "#94a3b8", display: "block", marginTop: "5px", fontSize: "11.5px" }}>
+                                                                Your event pass will be delivered to: <strong>{formData.email.trim() ? (formData.email.includes("@") ? formData.email.trim().toLowerCase() : `${formData.email.trim().toLowerCase()}@gmail.com`) : "..."}</strong>
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div className="remaining-fields-notice">
+                                                    <strong>Please provide your college roll number and section:</strong>
+                                                </div>
+
+                                                <div className="grid-2-col">
+                                                    {/* COLLEGE ROLL NO */}
+                                                    <div className="field">
+                                                        <label>
+                                                            <svg className="field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="16" rx="2"></rect><line x1="7" y1="8" x2="17" y2="8"></line><line x1="7" y1="12" x2="17" y2="12"></line><line x1="7" y1="16" x2="13" y2="16"></line></svg>
+                                                            College Roll Number (Reg No) <span className="req-star">*</span>
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            name="registrationNumber"
+                                                            value={formData.registrationNumber}
+                                                            onChange={handleChange}
+                                                            placeholder="e.g. 24B91A05XX"
+                                                            style={{ textTransform: "uppercase" }}
+                                                            required
+                                                        />
+                                                    </div>
+
+                                                    {/* SECTION */}
+                                                    <div className="field">
+                                                        <label>
+                                                            <svg className="field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+                                                            Section <span className="req-star">*</span>
+                                                        </label>
+                                                        <select
+                                                            name="section"
+                                                            value={formData.section}
+                                                            onChange={handleChange}
+                                                            required
+                                                        >
+                                                            <option value="">Select Section</option>
+                                                            {SECTION_OPTIONS.map((sec) => (
+                                                                <option key={sec} value={sec}>
+                                                                    Section {sec}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            /* NON-MEMBER: MANUAL INPUTS */
+                                            <>
+                                                <div className="field">
+                                                    <label>
+                                                        <svg className="field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                                                        Full Name <span className="req-star">*</span>
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        name="name"
+                                                        value={formData.name}
+                                                        onChange={handleChange}
+                                                        placeholder="e.g. Gopala Krishna Saketh"
+                                                        required
+                                                    />
+                                                </div>
+
+                                                <div className="field">
+                                                    <label>
+                                                        <svg className="field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                                                        Gmail Address <span className="req-star">*</span>
+                                                    </label>
+                                                    <div className="email-input-wrapper">
+                                                        <input
+                                                            type="text"
+                                                            name="email"
+                                                            value={formData.email}
+                                                            onChange={handleChange}
+                                                            placeholder="e.g. yourname or yourname@gmail.com"
+                                                            autoCapitalize="none"
+                                                            autoCorrect="off"
+                                                            spellCheck="false"
+                                                            required
+                                                        />
+                                                        {!formData.email.includes("@") && (
+                                                            <span className="gmail-suffix">@gmail.com</span>
+                                                        )}
+                                                    </div>
+                                                    <span className="field-helper-text" style={{ color: "#94a3b8", display: "block", marginTop: "5px", fontSize: "12px" }}>
+                                                        Enter your Gmail username or your full @gmail.com address.
+                                                    </span>
+                                                </div>
+
+                                                <div className="field">
+                                                    <label>
+                                                        <svg className="field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                                                        WhatsApp Number <span className="req-star">*</span>
+                                                    </label>
+                                                    <input
+                                                        type="tel"
+                                                        name="whatsappNumber"
+                                                        value={formData.whatsappNumber}
+                                                        onChange={(e) => {
+                                                            const val = e.target.value.replace(/\D/g, "").slice(0, 10);
+                                                            setFormData((prev) => ({ ...prev, whatsappNumber: val }));
+                                                            if (error) setError("");
+                                                        }}
+                                                        placeholder="10-digit mobile number"
+                                                        pattern="[0-9]{10}"
+                                                        maxLength="10"
+                                                        required
+                                                    />
+                                                </div>
+
+                                                <div className="grid-2-col">
+                                                    <div className="field">
+                                                        <label>
+                                                            <svg className="field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="16" rx="2"></rect><line x1="7" y1="8" x2="17" y2="8"></line><line x1="7" y1="12" x2="17" y2="12"></line><line x1="7" y1="16" x2="13" y2="16"></line></svg>
+                                                            College Roll Number <span className="req-star">*</span>
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            name="registrationNumber"
+                                                            value={formData.registrationNumber}
+                                                            onChange={handleChange}
+                                                            placeholder="e.g. 24B91A05XX"
+                                                            style={{ textTransform: "uppercase" }}
+                                                            required
+                                                        />
+                                                    </div>
+
+                                                    <div className="field">
+                                                        <label>
+                                                            <svg className="field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+                                                            Section <span className="req-star">*</span>
+                                                        </label>
+                                                        <select
+                                                            name="section"
+                                                            value={formData.section}
+                                                            onChange={handleChange}
+                                                            required
+                                                        >
+                                                            <option value="">Select Section</option>
+                                                            {SECTION_OPTIONS.map((sec) => (
+                                                                <option key={sec} value={sec}>
+                                                                    Section {sec}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                </div>
+
+                                                <div className="field">
+                                                    <label>
+                                                        <svg className="field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path></svg>
+                                                        Branch <span className="req-star">*</span>
+                                                    </label>
+                                                    <select
+                                                        name="branch"
+                                                        value={formData.branch}
+                                                        onChange={handleChange}
+                                                        required
+                                                    >
+                                                        <option value="">Select Branch</option>
+                                                        {BRANCH_OPTIONS.map((branch) => (
+                                                            <option key={branch} value={branch}>
+                                                                {branch}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                            </>
                                         )}
-
-                                        {/* FULL NAME */}
-                                        <div className="field">
-                                            <label>
-                                                <svg className="field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                                                Full Name <span className="req-star">*</span>
-                                            </label>
-                                            <input
-                                                type="text"
-                                                name="name"
-                                                value={formData.name}
-                                                onChange={handleChange}
-                                                placeholder="e.g. Gopala Krishna Saketh"
-                                                required
-                                            />
-                                        </div>
-
-                                        {/* GMAIL ADDRESS */}
-                                        <div className="field">
-                                            <label>
-                                                <svg className="field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-                                                Gmail Address <span className="req-star">*</span>
-                                            </label>
-                                            <div className="email-input-wrapper">
-                                                <input
-                                                    type="text"
-                                                    name="email"
-                                                    value={formData.email}
-                                                    onChange={handleChange}
-                                                    placeholder="Enter Gmail username"
-                                                    required
-                                                />
-                                                <span className="gmail-suffix">@gmail.com</span>
-                                            </div>
-                                            <div className="email-note-box" style={{
-                                                marginTop: "8px",
-                                                padding: "8px 12px",
-                                                background: "#eff6ff",
-                                                border: "1px solid #bfdbfe",
-                                                borderRadius: "8px",
-                                                fontSize: "12px",
-                                                color: "#1e40af",
-                                                lineHeight: "1.45"
-                                            }}>
-                                                💡 <strong>Note:</strong> Enter username only (e.g. <code>john.doe</code>). Please <strong>do not type @gmail.com</strong> — it is added automatically. (Even if entered by mistake, it will be accepted automatically).
-                                            </div>
-                                        </div>
-
-                                        {/* WHATSAPP NUMBER */}
-                                        <div className="field">
-                                            <label>
-                                                <svg className="field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-                                                WhatsApp Number <span className="req-star">*</span>
-                                            </label>
-                                            <input
-                                                type="tel"
-                                                name="whatsappNumber"
-                                                value={formData.whatsappNumber}
-                                                onChange={(e) => {
-                                                    const val = e.target.value.replace(/\D/g, "").slice(0, 10);
-                                                    setFormData((prev) => ({ ...prev, whatsappNumber: val }));
-                                                    if (error) setError("");
-                                                }}
-                                                placeholder="10-digit mobile number"
-                                                pattern="[0-9]{10}"
-                                                maxLength="10"
-                                                required
-                                            />
-                                        </div>
-
-                                        {/* ROLL NO & SECTION */}
-                                        <div className="grid-2-col">
-                                            <div className="field">
-                                                <label>
-                                                    <svg className="field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="16" rx="2"></rect><line x1="7" y1="8" x2="17" y2="8"></line><line x1="7" y1="12" x2="17" y2="12"></line><line x1="7" y1="16" x2="13" y2="16"></line></svg>
-                                                    College Roll Number <span className="req-star">*</span>
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    name="registrationNumber"
-                                                    value={formData.registrationNumber}
-                                                    onChange={handleChange}
-                                                    placeholder="e.g. 24B91A05XX"
-                                                    style={{ textTransform: "uppercase" }}
-                                                    required
-                                                />
-                                            </div>
-
-                                            <div className="field">
-                                                <label>
-                                                    <svg className="field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
-                                                    Section <span className="req-star">*</span>
-                                                </label>
-                                                <select
-                                                    name="section"
-                                                    value={formData.section}
-                                                    onChange={handleChange}
-                                                    required
-                                                >
-                                                    <option value="">Select Section</option>
-                                                    {SECTION_OPTIONS.map((sec) => (
-                                                        <option key={sec} value={sec}>
-                                                            Section {sec}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            </div>
-                                        </div>
-
-                                        {/* BRANCH */}
-                                        <div className="field">
-                                            <label>
-                                                <svg className="field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path></svg>
-                                                Branch <span className="req-star">*</span>
-                                            </label>
-                                            <select
-                                                name="branch"
-                                                value={formData.branch}
-                                                onChange={handleChange}
-                                                required
-                                            >
-                                                <option value="">Select Branch</option>
-                                                {BRANCH_OPTIONS.map((branch) => (
-                                                    <option key={branch} value={branch}>
-                                                        {branch}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-
                                         {/* ERROR NOTIFICATION */}
                                         {error && (
                                             <div className="error-message" style={{ margin: "16px 0 8px" }}>
@@ -1934,7 +2203,9 @@ export default function App() {
             {showOfflinePasscodeModal && (
                 <div className="offline-modal-backdrop" onClick={() => setShowOfflinePasscodeModal(false)}>
                     <div className="offline-modal-card" onClick={(e) => e.stopPropagation()}>
-                        <div className="offline-modal-icon">🛠️</div>
+                        <div className="offline-modal-icon" style={{ display: "flex", justifyContent: "center", color: "#0284c7" }}>
+                            <Wrench size={32} />
+                        </div>
                         <h3>Admin Offline Registration Desk</h3>
                         <p>Enter the master admin passcode to enable cash registration mode.</p>
 
@@ -2005,8 +2276,8 @@ export default function App() {
                             </svg>
                         </div>
 
-                        <h2 style={{ fontSize: "22px", fontWeight: "800", color: "#0f172a", marginBottom: "8px" }}>
-                            Registration Successful! 🎉
+                        <h2 style={{ fontSize: "22px", fontWeight: "800", color: "#0f172a", marginBottom: "8px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                            Registration Successful! <PartyPopper size={22} color="#f59e0b" />
                         </h2>
 
                         <p style={{ fontSize: "14px", color: "#64748b", margin: "0 0 16px" }}>
@@ -2029,7 +2300,13 @@ export default function App() {
                             <div className="receipt-row">
                                 <span className="receipt-label">Category</span>
                                 <span className="receipt-val">
-                                    {successData.isAcmMember ? "🌟 ACM Member (Verified)" : "Regular Attendee"}
+                                    {successData.isAcmMember ? (
+                                        <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}>
+                                            <Star size={14} color="#f59e0b" fill="#f59e0b" /> ACM Member (Verified)
+                                        </span>
+                                    ) : (
+                                        "Regular Attendee"
+                                    )}
                                 </span>
                             </div>
                             <div className="receipt-row">
