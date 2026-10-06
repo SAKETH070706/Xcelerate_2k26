@@ -135,21 +135,15 @@ button {
 }
 
 .header-logo {
-    width: 42px;
+    width: auto;
     height: 42px;
-
-    object-fit: cover;
-
-    border-radius: 50%;
-
-    background: white;
-
-    border:
-        2px solid rgba(37, 99, 235, 0.4);
-
-    box-shadow:
-        0 0 12px rgba(37, 99, 235, 0.25);
-
+    max-width: 54px;
+    object-fit: contain;
+    border-radius: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    filter: drop-shadow(0 2px 6px rgba(37, 99, 235, 0.2));
     image-rendering: -webkit-optimize-contrast;
 }
 
@@ -5182,8 +5176,9 @@ select option {
     }
 
     .header-logo {
-        width: 36px;
+        width: auto;
         height: 36px;
+        max-width: 46px;
     }
 
     .brand {
@@ -5343,9 +5338,10 @@ select option {
     }
 
     .header-logo {
-        width: 32px;
+        width: auto;
         height: 32px;
-        border-width: 1.5px;
+        max-width: 40px;
+        border: none;
         flex-shrink: 0;
     }
 
@@ -5879,8 +5875,9 @@ select option {
     }
 
     .header-logo {
-        width: 28px;
+        width: auto;
         height: 28px;
+        max-width: 36px;
     }
 
     .brand-text strong {
